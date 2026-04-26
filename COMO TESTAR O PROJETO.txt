@@ -1,0 +1,117 @@
+COMO TESTAR O PROJETO
+=====================
+
+
+1. CONFIRMAR A ESTRUTURA CERTA
+------------------------------
+No repositorio clonado, as pastas usadas no teste devem ser estas:
+
+- backend
+- frontend
+
+Ou seja:
+
+- backend correto: `C:\ProjetoExtensao\backend`
+- frontend correto: `C:\ProjetoExtensao\frontend`
+
+2. SUBIR O BANCO
+----------------
+Abra um terminal normal e rode:
+
+cd C:\ProjetoExtensao\backend
+powershell -ExecutionPolicy Bypass -File .\scripts\dev_postgres.ps1 start
+
+Para conferir o status:
+
+powershell -ExecutionPolicy Bypass -File .\scripts\dev_postgres.ps1 status
+
+
+3. RODAR AS MIGRATIONS
+----------------------
+Ainda na pasta `backend`:
+
+python -m alembic upgrade head
+
+
+4. SUBIR O BACKEND
+------------------
+Ainda na pasta `backend`:
+
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+5. TESTAR O BACKEND
+-------------------
+Abra:
+
+- Health: `http://127.0.0.1:8000/health`
+- Swagger: `http://127.0.0.1:8000/docs`
+
+Resposta esperada no health:
+
+{"status":"ok","database":true}
+
+
+6. SUBIR O FRONTEND
+-------------------
+Abra um segundo terminal normal e rode:
+
+cd C:\ProjetoExtensao\frontend
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
+
+Depois abra:
+
+http://127.0.0.1:5173/login
+
+
+7. LOGIN NO SISTEMA
+--------------------
+Credenciais locais padrao:
+
+- e-mail: `admin@casa.local`
+- senha: `admin123456`
+
+
+8. ERROS COMUNS
+----------------
+Se o banco nao subir:
+- confirme que o terminal nao esta como administrador
+- rode o script novamente
+
+Se o Windows reclamar de caminho muito longo:
+- mova o projeto para `C:\ProjetoExtensao`
+- rode o script novamente
+
+Se o frontend abrir, mas a agenda mostrar erro ou `Not Found`:
+- confirme que o backend rodando veio da pasta `C:\ProjetoExtensao\backend`
+
+Se a tela falhar ao buscar dados:
+- confirme que backend e frontend vieram do mesmo repositorio clonado
+
+Se a porta 8000 estiver ocupada:
+- feche o backend anterior e rode de novo
+
+Se a porta 5173 estiver ocupada:
+- feche o frontend anterior e rode de novo
+
+
+9. COMANDOS PRINCIPAIS
+-----------------------
+Banco:
+
+cd C:\ProjetoExtensao\backend
+powershell -ExecutionPolicy Bypass -File .\scripts\dev_postgres.ps1 start
+
+Migrations:
+
+python -m alembic upgrade head
+
+Backend:
+
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+Frontend:
+
+cd C:\ProjetoExtensao\frontend
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
