@@ -1,0 +1,345 @@
+================================================================================
+  CASA ASSISTENCIAL — GUIA DE DEPLOY NA OCI
+  Destinado à equipe de infraestrutura
+  Última revisão: 2026-05-11
+================================================================================
+
+Este guia descreve todos os passos para colocar o sistema em produção em uma
+VM Oracle Cloud Infrastructure (OCI) rodando Ubuntu 22.04 LTS.
+
+--------------------------------------------------------------------------------
+VISÃO GERAL DA ARQUITETURA
+--------------------------------------------------------------------------------
+
+  [Browser do usuário]
+        |
+        | HTTPS (porta 443)
+        v
+  [Nginx]  ← serve o frontend (pasta dist/) e faz proxy para o backend
+        |
+        | HTTP interno (porta 8000)
+        v
+  [Uvicorn / FastAPI]  ← backend Python
+        |
+        | conexão local
+        v
+  [PostgreSQL]  ← banco de dados na mesma VM
+
+--------------------------------------------------------------------------------
+PARTE 1 — REQUISITOS DA VM
+--------------------------------------------------------------------------------
+
+  Sistema operacional : Ubuntu 22.04 LTS
+  Mínimo recomendado  : 1 OCPU, 1 GB RAM (OCI Always Free cobre isso)
+  Portas abertas      : 22 (SSH), 80 (HTTP), 443 (HTTPS)
+
+  IMPORTANTE: A porta 8000 NÃO deve ser aberta ao público.
+  O Nginx recebe o tráfego externo e repassa internamente para o backend.
+  Isso evita acesso direto à API sem passar pelo servidor web.
+
+  No painel da OCI, em "Security Lists" ou "Network Security Groups",
+  abra apenas as portas 22, 80 e 443.
+
+  No firewall da própria VM (UFW), execute:
+    sudo ufw allow OpenSSH
+    sudo ufw allow 'Nginx Full'
+    sudo ufw enable
+
+--------------------------------------------------------------------------------
+PARTE 2 — DEPENDÊNCIAS
+--------------------------------------------------------------------------------
+
+  sudo apt update && sudo apt upgrade -y
+
+  # Python 3.11+
+  sudo apt install -y python3 python3-pip python3-venv
+
+  # Node.js 20 (para buildar o frontend)
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  sudo apt install -y nodejs
+
+  # PostgreSQL 16
+  sudo apt install -y postgresql postgresql-contrib
+
+  # Nginx
+  sudo apt install -y nginx
+
+  # Supervisor (mantém o backend rodando após reinicialização)
+  sudo apt install -y supervisor
+
+  # Git
+  sudo apt install -y git
+
+--------------------------------------------------------------------------------
+PARTE 3 — BANCO DE DADOS
+--------------------------------------------------------------------------------
+
+  # Iniciar o PostgreSQL
+  sudo systemctl start postgresql
+  sudo systemctl enable postgresql
+
+  # Acessar o shell do PostgreSQL como superusuário
+  sudo -u postgres psql
+
+  # Dentro do psql, execute:
+  ALTER USER postgres PASSWORD 'ESCOLHA_UMA_SENHA_FORTE';
+  CREATE DATABASE casa_assistencial;
+  \q
+
+  Guarde a senha escolhida — ela será usada na variável DATABASE_URL
+  no arquivo .env do backend (Parte 5).
+
+--------------------------------------------------------------------------------
+PARTE 4 — TRANSFERÊNCIA DO CÓDIGO
+--------------------------------------------------------------------------------
+
+  Opção A — via Git (recomendado):
+    cd /opt
+    sudo git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git casa
+    sudo chown -R $USER:$USER /opt/casa
+
+  Opção B — via SCP (da sua máquina local):
+    scp -r ./MainAPI-main ubuntu@SEU_IP_OCI:/opt/casa
+
+  Estrutura esperada em /opt/casa:
+    /opt/casa/
+      backend/
+      frontend/
+      INFRA_DEPLOY.txt
+      ...
+
+--------------------------------------------------------------------------------
+PARTE 5 — CONFIGURAÇÃO DO BACKEND
+--------------------------------------------------------------------------------
+
+  # Criar ambiente virtual e instalar dependências
+  cd /opt/casa/backend
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+
+  # Criar o arquivo de variáveis de ambiente
+  cp .env.example .env
+  nano .env   (ou vim .env)
+
+  Preencha o arquivo .env com os valores reais:
+
+  -------------------------------------------------------------------------
+  APP_NAME=Casa Assistencial API
+  APP_ENV=production
+  APP_DEBUG=false
+  APP_HOST=0.0.0.0
+  APP_PORT=8000
+  DATABASE_URL=postgresql+psycopg://postgres:SENHA_DO_BANCO@localhost:5432/casa_assistencial
+  JWT_SECRET_KEY=GERE_UMA_CHAVE_ALEATORIA_DE_64_CARACTERES
+  JWT_ALGORITHM=HS256
+  ACCESS_TOKEN_EXPIRE_MINUTES=60
+  SEED_ADMIN_ON_STARTUP=true
+  ADMIN_FULL_NAME=Administrador
+  ADMIN_EMAIL=admin@casa.local
+  ADMIN_PASSWORD=ESCOLHA_UMA_SENHA_FORTE_PARA_O_ADMIN
+  CORS_ALLOW_ORIGINS=["https://seudominio.com.br","https://www.seudominio.com.br"]
+  -------------------------------------------------------------------------
+
+  Observações:
+  - JWT_SECRET_KEY: gere com o comando:
+      python3 -c "import secrets; print(secrets.token_hex(32))"
+  - CORS_ALLOW_ORIGINS: coloque o domínio ou IP pelo qual o frontend será
+    acessado. Se ainda não tiver domínio, use o IP:
+      CORS_ALLOW_ORIGINS=["http://SEU_IP_OCI"]
+  - O arquivo .env está no .gitignore — nunca será enviado ao repositório.
+
+  # Rodar as migrations (cria todas as tabelas no banco)
+  source .venv/bin/activate
+  python -m alembic upgrade head
+
+  Você verá linhas "Running upgrade ..." para cada migration.
+  Se não aparecer erro, o banco está pronto.
+
+--------------------------------------------------------------------------------
+PARTE 6 — SUPERVISOR (manter o backend vivo)
+--------------------------------------------------------------------------------
+
+  Crie o arquivo de configuração do Supervisor:
+
+    sudo nano /etc/supervisor/conf.d/casa_backend.conf
+
+  Conteúdo do arquivo:
+
+  -------------------------------------------------------------------------
+  [program:casa_backend]
+  command=/opt/casa/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+  directory=/opt/casa/backend
+  user=ubuntu
+  autostart=true
+  autorestart=true
+  stopasgroup=true
+  killasgroup=true
+  stderr_logfile=/var/log/casa_backend.err.log
+  stdout_logfile=/var/log/casa_backend.out.log
+  -------------------------------------------------------------------------
+
+  # Ativar e iniciar
+  sudo supervisorctl reread
+  sudo supervisorctl update
+  sudo supervisorctl start casa_backend
+
+  # Verificar se está rodando
+  sudo supervisorctl status casa_backend
+
+  Deve aparecer: casa_backend   RUNNING   pid XXXXX, uptime X:XX:XX
+
+--------------------------------------------------------------------------------
+PARTE 7 — FRONTEND (build e deploy)
+--------------------------------------------------------------------------------
+
+  # Instalar dependências
+  cd /opt/casa/frontend
+  npm install
+
+  # Verificar o arquivo .env.production
+  cat .env.production
+
+  Deve conter:
+    VITE_API_BASE_URL=https://seudominio.com.br
+    (ou http://SEU_IP_OCI se não tiver domínio ainda)
+
+  Se o IP ou domínio mudou, edite o arquivo antes de buildar:
+    nano .env.production
+
+  # Gerar o build de produção
+  npm run build
+
+  Isso cria a pasta /opt/casa/frontend/dist/ com os arquivos estáticos.
+
+--------------------------------------------------------------------------------
+PARTE 8 — NGINX
+--------------------------------------------------------------------------------
+
+  Crie o arquivo de configuração do Nginx:
+
+    sudo nano /etc/nginx/sites-available/casa
+
+  Conteúdo do arquivo (sem domínio / apenas IP):
+
+  -------------------------------------------------------------------------
+  server {
+      listen 80;
+      server_name SEU_IP_OCI;
+
+      root /opt/casa/frontend/dist;
+      index index.html;
+
+      # Rota /api → backend
+      location /api/ {
+          proxy_pass http://127.0.0.1:8000/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+      }
+
+      # Todas as outras rotas → frontend (necessário para SPA com React Router)
+      location / {
+          try_files $uri $uri/ /index.html;
+      }
+  }
+  -------------------------------------------------------------------------
+
+  Conteúdo do arquivo (com domínio + HTTPS via Certbot):
+
+  -------------------------------------------------------------------------
+  server {
+      listen 80;
+      server_name seudominio.com.br www.seudominio.com.br;
+      return 301 https://$host$request_uri;
+  }
+
+  server {
+      listen 443 ssl;
+      server_name seudominio.com.br www.seudominio.com.br;
+
+      ssl_certificate     /etc/letsencrypt/live/seudominio.com.br/fullchain.pem;
+      ssl_certificate_key /etc/letsencrypt/live/seudominio.com.br/privkey.pem;
+
+      root /opt/casa/frontend/dist;
+      index index.html;
+
+      location /api/ {
+          proxy_pass http://127.0.0.1:8000/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+      }
+
+      location / {
+          try_files $uri $uri/ /index.html;
+      }
+  }
+  -------------------------------------------------------------------------
+
+  # Ativar o site e recarregar o Nginx
+  sudo ln -s /etc/nginx/sites-available/casa /etc/nginx/sites-enabled/
+  sudo nginx -t          (verifica se a configuração está correta)
+  sudo systemctl reload nginx
+
+  # HTTPS com Certbot (só se tiver domínio apontando para o IP da OCI)
+  sudo apt install -y certbot python3-certbot-nginx
+  sudo certbot --nginx -d seudominio.com.br -d www.seudominio.com.br
+
+  O Certbot renova o certificado automaticamente — não precisa fazer isso
+  manualmente.
+
+--------------------------------------------------------------------------------
+PARTE 9 — VERIFICAÇÃO FINAL
+--------------------------------------------------------------------------------
+
+  1. Abrir no browser: http://SEU_IP_OCI (ou https://seudominio.com.br)
+     → Deve aparecer a tela de login do sistema
+
+  2. Fazer login com as credenciais definidas no .env (ADMIN_EMAIL e
+     ADMIN_PASSWORD)
+     → Deve entrar no sistema sem erro "Failed to fetch"
+
+  3. Verificar os logs do backend se houver algum problema:
+     sudo tail -f /var/log/casa_backend.err.log
+
+  4. Verificar o status dos serviços:
+     sudo supervisorctl status
+     sudo systemctl status nginx
+     sudo systemctl status postgresql
+
+--------------------------------------------------------------------------------
+PARTE 10 — ATUALIZAÇÃO DO SISTEMA (após mudanças no código)
+--------------------------------------------------------------------------------
+
+  # Puxar as mudanças do repositório
+  cd /opt/casa
+  git pull origin main
+
+  # Backend — aplicar novas migrations (se houver)
+  cd /opt/casa/backend
+  source .venv/bin/activate
+  python -m alembic upgrade head
+
+  # Backend — reiniciar para carregar o novo código
+  sudo supervisorctl restart casa_backend
+
+  # Frontend — rebuildar se houve mudanças no frontend
+  cd /opt/casa/frontend
+  npm install          (só necessário se package.json mudou)
+  npm run build
+
+  # Nginx já aponta para a pasta dist/ — não precisa reiniciar
+
+--------------------------------------------------------------------------------
+DÚVIDAS E CONTATO
+--------------------------------------------------------------------------------
+
+  Repositório    : github.com/SEU_USUARIO/SEU_REPOSITORIO
+  Stack          : Python 3.11 / FastAPI / PostgreSQL / React 19 / Nginx
+  Arquivo .env   : NÃO está no repositório (ver backend/.env.example)
+  Senhas         : Gerenciadas pela equipe responsável pelo projeto
+
+================================================================================

@@ -1,0 +1,167 @@
+SUBIR_PROJETO_LINUX
+===================
+
+Este guia explica, de forma direta, como subir a versao Docker do projeto no Linux.
+
+1. PRE-REQUISITOS
+-----------------
+Antes de comecar, a maquina precisa ter:
+
+- Git
+- Docker
+- Docker Compose
+
+Em muitas distribuicoes Linux, o `docker compose` funciona como plugin do Docker.
+
+
+2. CLONAR O REPOSITORIO
+-----------------------
+Clone o repositorio em uma pasta de sua preferencia:
+
+git clone https://github.com/SantLuiz/Projeto_Extensao.git ~/ProjetoExtensao
+cd ~/ProjetoExtensao
+
+
+3. ENTRAR NA BRANCH CERTA
+-------------------------
+Troque para a branch que contem a versao Docker para Linux:
+
+git checkout Docker-Linux
+
+
+4. PREPARAR O ARQUIVO DE AMBIENTE
+---------------------------------
+Na raiz do repositorio, copie o arquivo de exemplo do Docker:
+
+cp .env.docker.example .env
+
+Esse arquivo sera usado pelo:
+- banco
+- backend
+- frontend
+
+
+5. SUBIR TUDO COM DOCKER COMPOSE
+--------------------------------
+Ainda na raiz do repositorio, rode:
+
+docker compose up --build
+
+Esse comando sobe:
+- PostgreSQL
+- backend FastAPI
+- frontend React + Vite
+
+Na primeira execucao, o processo pode demorar um pouco por causa do build das imagens.
+
+
+6. VALIDAR SE O PROJETO SUBIU
+-----------------------------
+Depois que os containers estiverem em execucao, abra:
+
+- frontend: http://127.0.0.1:5173/login
+- backend: http://127.0.0.1:8000
+- health: http://127.0.0.1:8000/health
+- swagger: http://127.0.0.1:8000/docs
+
+Resposta esperada no health:
+
+{"status":"ok","database":true}
+
+
+7. LOGIN PADRAO
+---------------
+Use estas credenciais:
+
+- e-mail: admin@casa.local
+- senha: admin123456
+
+
+8. TESTE RAPIDO RECOMENDADO
+---------------------------
+Depois do login, valide nesta ordem:
+
+1. Dashboard
+- confirme que a tela abre
+
+2. Pacientes
+- abra a lista de pacientes
+
+3. Prescricoes
+- selecione um paciente
+- confira se a tela carrega
+
+4. Alertas
+- abra a tela de alertas
+- confira se os cards e a lista carregam
+
+5. Swagger
+- abra http://127.0.0.1:8000/docs
+- confirme que a API esta acessivel
+
+
+9. COMANDOS UTEIS
+-----------------
+Subir tudo:
+
+docker compose up --build
+
+Subir em segundo plano:
+
+docker compose up --build -d
+
+Ver containers:
+
+docker compose ps
+
+Ver logs:
+
+docker compose logs -f
+
+Ver logs do backend:
+
+docker compose logs -f backend
+
+Ver logs do frontend:
+
+docker compose logs -f frontend
+
+Ver logs do banco:
+
+docker compose logs -f db
+
+
+10. COMO PARAR
+--------------
+Para parar os containers e manter os dados do banco:
+
+docker compose down
+
+Para parar e apagar tambem o volume do PostgreSQL:
+
+docker compose down -v
+
+
+11. SE DER ERRO
+---------------
+Se o frontend abrir, mas nao carregar dados:
+- confira os logs do backend
+- confirme que o backend subiu sem erro de migration
+
+Se o backend nao subir:
+- veja os logs com `docker compose logs -f backend`
+- confirme se o servico `db` ficou saudavel
+
+Se quiser recomecar do zero:
+
+docker compose down -v
+docker compose up --build
+
+
+12. RESUMO CURTO
+----------------
+1. clonar o repositorio
+2. entrar na branch `Docker-Linux`
+3. copiar `.env.docker.example` para `.env`
+4. rodar `docker compose up --build`
+5. abrir frontend, backend e Swagger

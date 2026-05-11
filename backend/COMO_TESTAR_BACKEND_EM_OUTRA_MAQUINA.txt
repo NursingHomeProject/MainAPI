@@ -1,0 +1,49 @@
+COMO TESTAR O BACKEND EM OUTRA MAQUINA
+=====================================
+
+1. ONDE COLOCAR O PROJETO
+-------------------------
+No Windows, prefira uma pasta curta:
+
+C:\ProjetoExtensao
+
+Nao use terminal em modo administrador.
+
+
+2. CLONAR O REPOSITORIO
+-----------------------
+git clone https://github.com/SantLuiz/Projeto_Extensao.git C:\ProjetoExtensao
+cd C:\ProjetoExtensao
+
+Se precisar:
+
+git checkout Desenvolvimento-Frontend
+
+
+3. ENTRAR NO BACKEND CERTO
+--------------------------
+Use esta pasta:
+
+C:\ProjetoExtensao\backend
+
+
+4. INSTALAR E SUBIR
+-------------------
+cd C:\ProjetoExtensao\backend
+python -m pip install -r requirements.txt
+powershell -ExecutionPolicy Bypass -File .\scripts\dev_postgres.ps1 start
+python -m alembic upgrade head
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+
+5. VALIDAR
+----------
+- health: http://127.0.0.1:8000/health
+- swagger: http://127.0.0.1:8000/docs
+
+
+6. SE DER ERRO
+--------------
+- confirme que o terminal nao esta como administrador
+- confirme que o projeto esta em uma pasta curta
+- confirme que o backend veio da pasta `backend` da raiz do repositorio
