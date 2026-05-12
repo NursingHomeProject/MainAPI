@@ -1,0 +1,356 @@
+================================================================================
+  CASA ASSISTENCIAL — GUIA DE DEPLOY NA ORACLE CLOUD (OCI)
+  Atualizado em: 2026-05-11
+================================================================================
+
+Este guia assume que você já tem uma VM criada na OCI com Ubuntu 22.04 e
+acesso via SSH. O IP público da VM é 129.148.49.83.
+
+Todos os comandos com $ são executados no terminal da VM (via SSH).
+Comandos sem $ são executados no seu computador local (Windows).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 1 — ABRIR AS PORTAS NA OCI (painel web)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Sem isso, ninguém de fora consegue acessar o sistema.
+
+1. Acesse console.oracle.com
+2. Vá em: Networking > Virtual Cloud Networks > sua VCN
+3. Clique em "Security Lists" > "Default Security List"
+4. Clique em "Add Ingress Rules" e adicione as seguintes regras:
+
+   Regra 1 — Frontend (porta 80):
+     Source CIDR: 0.0.0.0/0
+     IP Protocol: TCP
+     Destination Port Range: 80
+
+   Regra 2 — Backend (porta 8000):
+     Source CIDR: 0.0.0.0/0
+     IP Protocol: TCP
+     Destination Port Range: 8000
+
+   Regra 3 — SSH (se ainda não existir):
+     Source CIDR: 0.0.0.0/0
+     IP Protocol: TCP
+     Destination Port Range: 22
+
+ATENÇÃO: O OCI tem duas camadas de firewall. Além das regras acima,
+você também precisa liberar as portas no firewall da própria VM (Parte 2).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 2 — CONFIGURAR O FIREWALL DA VM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Conecte na VM via SSH:
+  ssh ubuntu@129.148.49.83
+
+Libere as portas no firewall interno da VM:
+
+  $ sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+  $ sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8000 -j ACCEPT
+  $ sudo netfilter-persistent save
+
+Se o comando netfilter-persistent não existir, instale com:
+  $ sudo apt install iptables-persistent -y
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 3 — INSTALAR AS DEPENDÊNCIAS NA VM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  $ sudo apt update && sudo apt upgrade -y
+
+  # Python 3.12
+  $ sudo apt install -y python3.12 python3.12-venv python3-pip
+
+  # PostgreSQL
+  $ sudo apt install -y postgresql postgresql-contrib
+
+  # Node.js 20 (para buildar o frontend)
+  $ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  $ sudo apt install -y nodejs
+
+  # Nginx (para servir o frontend buildado)
+  $ sudo apt install -y nginx
+
+  # Utilitário para manter processos rodando em background
+  $ sudo apt install -y supervisor
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 4 — CONFIGURAR O POSTGRESQL NA VM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  # Iniciar o serviço
+  $ sudo systemctl start postgresql
+  $ sudo systemctl enable postgresql
+
+  # Criar o banco e definir a senha do usuário postgres
+  $ sudo -u postgres psql
+
+  Dentro do psql, execute:
+    ALTER USER postgres PASSWORD 'ESCOLHA_UMA_SENHA_FORTE';
+    CREATE DATABASE casa_assistencial;
+    \q
+
+  IMPORTANTE: Anote a senha que você escolheu. Ela vai no .env do backend
+  (campo DATABASE_URL). Guarde também no arquivo SEGREDOS.txt da sua máquina.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 5 — ENVIAR O PROJETO PARA A VM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Opção A — via Git (recomendado):
+
+  Na VM:
+  $ git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git /home/ubuntu/casa
+  $ cd /home/ubuntu/casa
+
+Opção B — via SCP (copiar arquivos direto):
+
+  No seu computador Windows (PowerShell ou CMD):
+  scp -r "C:\Users\User\Desktop\Chris\Ed\MainAPI-main" ubuntu@129.148.49.83:/home/ubuntu/casa
+
+  Na VM, entre na pasta:
+  $ cd /home/ubuntu/casa
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 6 — CONFIGURAR O BACKEND
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  $ cd /home/ubuntu/casa/backend
+
+  # Criar ambiente virtual Python
+  $ python3.12 -m venv venv
+  $ source venv/bin/activate
+
+  # Instalar dependências
+  $ pip install -r requirements.txt
+
+  # Criar o arquivo .env de produção
+  $ nano .env
+
+  Cole o conteúdo abaixo (ou copie do SEGREDOS.txt seção 3),
+  substituindo SUA_SENHA_DO_BANCO pela senha definida na Parte 4:
+
+  --------------------------------------------------------------------------
+  APP_NAME=Casa Assistencial API
+  APP_ENV=production
+  APP_DEBUG=false
+  APP_HOST=0.0.0.0
+  APP_PORT=8000
+  DATABASE_URL=postgresql+psycopg://postgres:SUA_SENHA_DO_BANCO@localhost:5432/casa_assistencial
+  JWT_SECRET_KEY=e50d11fca9a9b5e631dd32cb300de6bb818b5f1f422b4d29ccc9a866563783cd
+  JWT_ALGORITHM=HS256
+  ACCESS_TOKEN_EXPIRE_MINUTES=60
+  SEED_ADMIN_ON_STARTUP=true
+  ADMIN_FULL_NAME=Administrador
+  ADMIN_EMAIL=admin@casa.local
+  ADMIN_PASSWORD=4e7d836fc9e00b941e50e1e67424585b
+  CORS_ALLOW_ORIGINS=["http://129.148.49.83:5173","http://129.148.49.83"]
+  --------------------------------------------------------------------------
+
+  Salvar no nano: Ctrl+O → Enter → Ctrl+X
+
+  # Rodar as migrations (cria todas as tabelas no banco)
+  $ alembic upgrade head
+
+  Você deve ver mensagens como:
+    Running upgrade -> 20260407_0001 ...
+    Running upgrade ... -> 20260407_0002 ...
+    (e assim por diante até a última migration)
+
+  Se não der erros, o banco está pronto e o admin será criado
+  automaticamente na primeira inicialização.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 7 — CONFIGURAR O SUPERVISOR (manter o backend rodando)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+O Supervisor garante que o backend reinicia automaticamente se cair.
+
+  $ sudo nano /etc/supervisor/conf.d/casa-backend.conf
+
+  Cole o conteúdo:
+
+  --------------------------------------------------------------------------
+  [program:casa-backend]
+  command=/home/ubuntu/casa/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+  directory=/home/ubuntu/casa/backend
+  user=ubuntu
+  autostart=true
+  autorestart=true
+  stderr_logfile=/var/log/casa-backend.err.log
+  stdout_logfile=/var/log/casa-backend.out.log
+  environment=HOME="/home/ubuntu",USER="ubuntu"
+  --------------------------------------------------------------------------
+
+  Ativar:
+  $ sudo supervisorctl reread
+  $ sudo supervisorctl update
+  $ sudo supervisorctl start casa-backend
+
+  Verificar se está rodando:
+  $ sudo supervisorctl status casa-backend
+
+  Deve mostrar: casa-backend   RUNNING   pid XXXXX, uptime 0:00:XX
+
+  Ver logs em tempo real:
+  $ sudo tail -f /var/log/casa-backend.out.log
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 8 — BUILDAR E CONFIGURAR O FRONTEND
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  # No seu computador local, buildar o frontend:
+  cd C:\Users\User\Desktop\Chris\Ed\MainAPI-main\frontend
+  npm install
+  npm run build
+
+  Isso gera a pasta frontend/dist/ com os arquivos prontos para produção.
+  O .env.production é usado automaticamente neste build (URL da OCI já configurada).
+
+  # Enviar a pasta dist para a VM:
+  scp -r "C:\Users\User\Desktop\Chris\Ed\MainAPI-main\frontend\dist" ubuntu@129.148.49.83:/home/ubuntu/casa-frontend
+
+  # Na VM, configurar o Nginx para servir o frontend:
+  $ sudo nano /etc/nginx/sites-available/casa-frontend
+
+  Cole o conteúdo:
+
+  --------------------------------------------------------------------------
+  server {
+      listen 80;
+      server_name 129.148.49.83;
+
+      root /home/ubuntu/casa-frontend;
+      index index.html;
+
+      # Redireciona todas as rotas para o React (SPA)
+      location / {
+          try_files $uri $uri/ /index.html;
+      }
+  }
+  --------------------------------------------------------------------------
+
+  Ativar o site e reiniciar o Nginx:
+  $ sudo ln -s /etc/nginx/sites-available/casa-frontend /etc/nginx/sites-enabled/
+  $ sudo rm -f /etc/nginx/sites-enabled/default
+  $ sudo nginx -t
+  $ sudo systemctl restart nginx
+  $ sudo systemctl enable nginx
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 9 — TESTAR O SISTEMA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Teste 1 — Backend acessível:
+    Abra no navegador: http://129.148.49.83:8000/docs
+    Deve aparecer a documentação interativa da API (Swagger UI).
+
+  Teste 2 — Endpoint de login:
+    Na página /docs, expanda POST /auth/login
+    Clique em "Try it out"
+    Username: admin@casa.local
+    Password: 4e7d836fc9e00b941e50e1e67424585b   (senha da seção 2 do SEGREDOS.txt)
+    Clique em Execute — deve retornar status 200 com access_token
+
+  Teste 3 — Frontend acessível:
+    Abra no navegador: http://129.148.49.83
+    Deve aparecer a tela de login do sistema.
+
+  Teste 4 — Login completo:
+    Na tela de login, use:
+      E-mail: admin@casa.local
+      Senha: 4e7d836fc9e00b941e50e1e67424585b
+    Deve redirecionar para o dashboard.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 10 — PROBLEMAS COMUNS E SOLUÇÕES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROBLEMA: "Failed to fetch" no login
+  CAUSA: Backend não está acessível ou CORS bloqueando.
+  VERIFICAR:
+    - $ curl http://129.148.49.83:8000/docs  (deve retornar HTML)
+    - $ sudo supervisorctl status casa-backend  (deve estar RUNNING)
+    - Portas 80 e 8000 abertas no painel OCI (Parte 1)
+    - Portas liberadas no firewall da VM (Parte 2)
+
+PROBLEMA: "E-mail ou senha inválidos" mesmo com credenciais corretas
+  CAUSA: Banco vazio (migrations não rodaram) ou senha diferente do .env.
+  VERIFICAR:
+    - $ cd /home/ubuntu/casa/backend && source venv/bin/activate
+    - $ alembic upgrade head  (rodar novamente, deve mostrar "já na versão atual")
+    - Confirmar que ADMIN_PASSWORD no .env bate com a senha que você está usando
+    - Se necessário, reiniciar o backend: $ sudo supervisorctl restart casa-backend
+
+PROBLEMA: Página em branco ou erro 404 no frontend
+  CAUSA: Nginx não configurado corretamente ou pasta dist não enviada.
+  VERIFICAR:
+    - $ ls /home/ubuntu/casa-frontend/index.html  (deve existir)
+    - $ sudo nginx -t  (deve mostrar "syntax is ok")
+    - $ sudo systemctl status nginx
+
+PROBLEMA: Erro de CORS no console do navegador
+  CAUSA: A origem do frontend não está na lista CORS_ALLOW_ORIGINS do backend.
+  SOLUÇÃO: Editar o .env do backend na VM e adicionar a origem correta:
+    CORS_ALLOW_ORIGINS=["http://129.148.49.83","http://SEU_DOMINIO_SE_TIVER"]
+  Depois reiniciar: $ sudo supervisorctl restart casa-backend
+
+PROBLEMA: Banco de dados não conecta (connection refused)
+  CAUSA: PostgreSQL não está rodando.
+  SOLUÇÃO:
+    - $ sudo systemctl start postgresql
+    - $ sudo systemctl enable postgresql
+
+PROBLEMA: O admin não foi criado automaticamente
+  CAUSA: Erro no banco durante a inicialização.
+  VERIFICAR OS LOGS:
+    - $ sudo tail -50 /var/log/casa-backend.out.log
+  SOLUÇÃO: Corrigir o erro apontado no log e reiniciar o backend.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 11 — COMANDOS ÚTEIS NO DIA A DIA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Ver status do backend:
+    $ sudo supervisorctl status casa-backend
+
+  Reiniciar o backend (após atualizar código ou .env):
+    $ sudo supervisorctl restart casa-backend
+
+  Ver logs do backend ao vivo:
+    $ sudo tail -f /var/log/casa-backend.out.log
+
+  Ver erros do backend:
+    $ sudo tail -f /var/log/casa-backend.err.log
+
+  Atualizar o código do backend (se usar Git):
+    $ cd /home/ubuntu/casa && git pull
+    $ cd backend && source venv/bin/activate
+    $ pip install -r requirements.txt
+    $ alembic upgrade head
+    $ sudo supervisorctl restart casa-backend
+
+  Atualizar o frontend (após rodar npm run build localmente):
+    Copiar a nova pasta dist para a VM:
+    scp -r "C:\Users\User\Desktop\Chris\Ed\MainAPI-main\frontend\dist" ubuntu@129.148.49.83:/home/ubuntu/casa-frontend
+    (O Nginx serve automaticamente os novos arquivos, sem reiniciar)
+
+  Conectar no banco via terminal:
+    $ sudo -u postgres psql -d casa_assistencial
+
+================================================================================
+  Guarde este arquivo junto com o SEGREDOS.txt em local seguro.
+================================================================================

@@ -1,0 +1,77 @@
+================================================================================
+  CASA ASSISTENCIAL — CREDENCIAIS E SEGREDOS DE PRODUÇÃO
+  Gerado em: 2026-05-11
+  ATENÇÃO: Nunca envie este arquivo para o Git ou compartilhe publicamente.
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. CHAVE SECRETA DO JWT (JWT_SECRET_KEY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  JWT_SECRET_KEY=e50d11fca9a9b5e631dd32cb300de6bb818b5f1f422b4d29ccc9a866563783cd
+
+  Onde usar: arquivo .env do backend na OCI (servidor de produção)
+  Por que importa: protege todos os tokens de login. Se vazar, qualquer pessoa
+  pode forjar tokens e acessar o sistema sem senha.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. SENHA DO ADMINISTRADOR (ADMIN_PASSWORD)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ADMIN_EMAIL=admin@casa.local
+  ADMIN_PASSWORD=4e7d836fc9e00b941e50e1e67424585b
+
+  Onde usar: arquivo .env do backend na OCI (servidor de produção)
+  Por que importa: é a conta criada automaticamente na primeira inicialização.
+  O padrão (admin123456) é fraco e público — trocar antes de subir.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. ARQUIVO .env COMPLETO PARA O BACKEND NA OCI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Copie o conteúdo abaixo para o arquivo backend/.env no servidor da OCI:
+
+  --------------------------------------------------------------------------
+  APP_NAME=Casa Assistencial API
+  APP_ENV=production
+  APP_DEBUG=false
+  APP_HOST=0.0.0.0
+  APP_PORT=8000
+  DATABASE_URL=postgresql+psycopg://postgres:SUA_SENHA_DO_BANCO@localhost:5432/casa_assistencial
+  JWT_SECRET_KEY=e50d11fca9a9b5e631dd32cb300de6bb818b5f1f422b4d29ccc9a866563783cd
+  JWT_ALGORITHM=HS256
+  ACCESS_TOKEN_EXPIRE_MINUTES=60
+  SEED_ADMIN_ON_STARTUP=true
+  ADMIN_FULL_NAME=Administrador
+  ADMIN_EMAIL=admin@casa.local
+  ADMIN_PASSWORD=4e7d836fc9e00b941e50e1e67424585b
+  CORS_ALLOW_ORIGINS=["http://129.148.49.83:5173","http://129.148.49.83"]
+  --------------------------------------------------------------------------
+
+  ATENÇÃO: Substitua SUA_SENHA_DO_BANCO pela senha real do PostgreSQL na OCI.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. ARQUIVO .env.production DO FRONTEND (já criado no projeto)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Localização: frontend/.env.production
+  Conteúdo atual:
+
+  VITE_API_BASE_URL=http://129.148.49.83:8000
+
+  Se o IP da OCI mudar, atualizar esse arquivo e rodar "npm run build" novamente.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. CHECKLIST ANTES DE SUBIR PARA PRODUÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [ ] Copiar o .env da seção 3 para o servidor da OCI
+  [ ] Substituir SUA_SENHA_DO_BANCO pela senha real do PostgreSQL
+  [ ] Confirmar que o IP 129.148.49.83 ainda é o IP público da VM
+  [ ] Rodar "alembic upgrade head" no servidor para criar as tabelas
+  [ ] Iniciar o backend com:
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+  [ ] Buildar o frontend com "npm run build" e servir a pasta dist/
+  [ ] Testar o login com admin@casa.local e a senha da seção 2
+
+================================================================================
