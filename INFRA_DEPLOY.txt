@@ -4,9 +4,6 @@
   Última revisão: 2026-05-11
 ================================================================================
 
-Este guia descreve todos os passos para colocar o sistema em produção em uma
-VM Oracle Cloud Infrastructure (OCI) rodando Ubuntu 22.04 LTS.
-
 --------------------------------------------------------------------------------
 VISÃO GERAL DA ARQUITETURA
 --------------------------------------------------------------------------------
@@ -29,9 +26,7 @@ VISÃO GERAL DA ARQUITETURA
 PARTE 1 — REQUISITOS DA VM
 --------------------------------------------------------------------------------
 
-  Sistema operacional : Ubuntu 22.04 LTS
-  Mínimo recomendado  : 1 OCPU, 1 GB RAM (OCI Always Free cobre isso)
-  Portas abertas      : 22 (SSH), 80 (HTTP), 443 (HTTPS)
+    Portas abertas      : 22 (SSH), 80 (HTTP), 443 (HTTPS)
 
   IMPORTANTE: A porta 8000 NÃO deve ser aberta ao público.
   O Nginx recebe o tráfego externo e repassa internamente para o backend.
@@ -332,14 +327,5 @@ PARTE 10 — ATUALIZAÇÃO DO SISTEMA (após mudanças no código)
   npm run build
 
   # Nginx já aponta para a pasta dist/ — não precisa reiniciar
-
---------------------------------------------------------------------------------
-DÚVIDAS E CONTATO
---------------------------------------------------------------------------------
-
-  Repositório    : github.com/SEU_USUARIO/SEU_REPOSITORIO
-  Stack          : Python 3.11 / FastAPI / PostgreSQL / React 19 / Nginx
-  Arquivo .env   : NÃO está no repositório (ver backend/.env.example)
-  Senhas         : Gerenciadas pela equipe responsável pelo projeto
 
 ================================================================================
