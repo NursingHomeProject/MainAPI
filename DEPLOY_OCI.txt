@@ -1,15 +1,3 @@
-================================================================================
-  CASA ASSISTENCIAL — GUIA DE DEPLOY NA ORACLE CLOUD (OCI)
-  Atualizado em: 2026-05-11
-================================================================================
-
-Este guia assume que você já tem uma VM criada na OCI com Ubuntu 22.04 e
-acesso via SSH. O IP público da VM é 129.148.49.83.
-
-Todos os comandos com $ são executados no terminal da VM (via SSH).
-Comandos sem $ são executados no seu computador local (Windows).
-
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PARTE 1 — ABRIR AS PORTAS NA OCI (painel web)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
