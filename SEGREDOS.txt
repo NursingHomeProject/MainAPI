@@ -1,5 +1,5 @@
 ================================================================================
-  CASA ASSISTENCIAL — CREDENCIAIS E SEGREDOS DE PRODUÇÃO
+  CASA ASSISTENCIAL — CREDENCIAIS E SENHAS DE PRODUÇÃO
   Gerado em: 2026-05-11
   ATENÇÃO: Nunca envie este arquivo para o Git ou compartilhe publicamente.
 ================================================================================
@@ -19,7 +19,7 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ADMIN_EMAIL=admin@casa.local
-  ADMIN_PASSWORD=4e7d836fc9e00b941e50e1e67424585b
+  ADMIN_PASSWORD=admin123456
 
   Onde usar: arquivo .env do backend na OCI (servidor de produção)
   Por que importa: é a conta criada automaticamente na primeira inicialização.
