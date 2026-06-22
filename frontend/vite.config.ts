@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import path from "node:path"
 
 import react from "@vitejs/plugin-react"
@@ -73,6 +74,14 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (requestPath) => requestPath.replace(/^\/api/, ""),
         },
+      },
+    },
+    test: {
+      environment: "happy-dom",
+      globals: true,
+      setupFiles: ["./src/test/setup.ts"],
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
       },
     },
   }
