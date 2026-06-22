@@ -3,6 +3,8 @@ import {
   Activity,
   ArrowLeft,
   Bell,
+  ChevronDown,
+  ChevronUp,
   ClipboardList,
   Clock3,
   Package,
@@ -23,13 +25,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getAdministrationDayStatusMeta } from "@/features/calculation/calculation-dose-state"
+import { PatientMovementHistory } from "@/features/inventory/patient-movement-history"
+import { StockEntryModal } from "@/features/inventory/stock-entry-modal"
 import {
   getPatientActiveItems,
   getPatientConsumptionSummary,
   getPatientDoseSchedule,
   getPatientDetails,
   getPatientStock,
-  createPatientStockEntry,
 } from "@/features/patients/patient-service"
 import {
   formatExpectedRange,
@@ -205,11 +208,8 @@ export function PatientDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [patientStock, setPatientStock] = useState<PatientItemStock[]>([])
   const [stockError, setStockError] = useState<string | null>(null)
-  const [openEntryItemId, setOpenEntryItemId] = useState<string | null>(null)
-  const [entryQuantity, setEntryQuantity] = useState("")
-  const [entryNotes, setEntryNotes] = useState("")
-  const [entryLoading, setEntryLoading] = useState(false)
-  const [entryError, setEntryError] = useState<string | null>(null)
+  const [entryModalItem, setEntryModalItem] = useState<PatientItemStock | null>(null)
+  const [openHistoryItemId, setOpenHistoryItemId] = useState<string | null>(null)
 
   const flashState = location.state as DetailLocationState | null
   const uniqueActiveItems = useMemo(() => {
@@ -351,26 +351,13 @@ export function PatientDetailPage() {
     navigate(location.pathname, { replace: true })
   }, [flashState?.message, location.pathname, navigate])
 
-  async function handleStockEntry(itemId: string) {
-    if (!token || !patientId || !entryQuantity) return
-    setEntryLoading(true)
-    setEntryError(null)
+  async function refreshStock() {
+    if (!token || !patientId) return
     try {
-      await createPatientStockEntry(token, patientId, {
-        item_id: itemId,
-        quantity: entryQuantity,
-        notes: entryNotes || null,
-      })
-      // Recarrega apenas o estoque sem recarregar toda a página
       const updated = await getPatientStock(token, patientId)
       setPatientStock(updated.data)
-      setOpenEntryItemId(null)
-      setEntryQuantity("")
-      setEntryNotes("")
-    } catch (err) {
-      setEntryError(getErrorMessage(err))
-    } finally {
-      setEntryLoading(false)
+    } catch {
+      // erro silencioso — stock banner já mostra o problema
     }
   }
 
@@ -631,6 +618,14 @@ export function PatientDetailPage() {
                   />
                 ) : null}
 
+                {/* Resumo de alertas */}
+                {!stockError && patientStock.some((s) => s.is_below_minimum) ? (
+                  <FeedbackBanner
+                    message={`${patientStock.filter((s) => s.is_below_minimum).length} medicamento(s) abaixo do estoque mínimo — verifique com a família.`}
+                    variant="warning"
+                  />
+                ) : null}
+
                 {!stockError && patientStock.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-border/80 bg-secondary/25 px-4">
                     <EmptyState
@@ -646,6 +641,7 @@ export function PatientDetailPage() {
                     className="rounded-2xl border border-border/70 bg-secondary/35 p-4"
                     key={stock.item_id}
                   >
+                    {/* Cabeçalho do item */}
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="font-medium">{stock.item_name}</p>
@@ -654,33 +650,46 @@ export function PatientDetailPage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={stock.is_below_minimum ? "warning" : "success"}>
-                          {stock.is_below_minimum ? "Estoque baixo" : "Estoque ok"}
+                        <Badge variant={stock.is_below_minimum ? "danger" : "success"}>
+                          {stock.is_below_minimum ? "Abaixo do mínimo" : "Estoque ok"}
                         </Badge>
                         <Button
-                          onClick={() => {
-                            if (openEntryItemId === stock.item_id) {
-                              setOpenEntryItemId(null)
-                            } else {
-                              setOpenEntryItemId(stock.item_id)
-                              setEntryQuantity("")
-                              setEntryNotes("")
-                              setEntryError(null)
-                            }
-                          }}
+                          onClick={() => setEntryModalItem(stock)}
                           size="sm"
                           variant="outline"
                         >
                           <Plus className="h-4 w-4" />
                           Registrar entrada
                         </Button>
+                        <Button
+                          onClick={() =>
+                            setOpenHistoryItemId(
+                              openHistoryItemId === stock.item_id ? null : stock.item_id,
+                            )
+                          }
+                          size="sm"
+                          variant="ghost"
+                        >
+                          {openHistoryItemId === stock.item_id ? (
+                            <>
+                              <ChevronUp className="h-4 w-4" />
+                              Ocultar histórico
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-4 w-4" />
+                              Ver histórico
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
 
+                    {/* Métricas */}
                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
                       <div>
                         <p className="text-muted-foreground">Saldo atual</p>
-                        <p className="text-lg font-semibold text-foreground">
+                        <p className={`text-lg font-semibold ${stock.is_below_minimum ? "text-red-600" : "text-foreground"}`}>
                           {formatDecimalAsInteger(stock.current_stock)} {stock.unit_symbol}
                         </p>
                       </div>
@@ -700,65 +709,33 @@ export function PatientDetailPage() {
                       </div>
                     </div>
 
-                    {openEntryItemId === stock.item_id ? (
-                      <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 p-4">
-                        <p className="mb-3 font-medium">Registrar entrada — {stock.item_name}</p>
-                        {entryError ? (
-                          <FeedbackBanner message={entryError} variant="error" />
-                        ) : null}
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground" htmlFor={`qty-${stock.item_id}`}>
-                              Quantidade ({stock.unit_symbol})
-                            </label>
-                            <input
-                              className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                              id={`qty-${stock.item_id}`}
-                              min="0.001"
-                              onChange={(e) => setEntryQuantity(e.target.value)}
-                              placeholder="Ex: 30"
-                              step="1"
-                              type="number"
-                              value={entryQuantity}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground" htmlFor={`notes-${stock.item_id}`}>
-                              Observações (opcional)
-                            </label>
-                            <input
-                              className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                              id={`notes-${stock.item_id}`}
-                              onChange={(e) => setEntryNotes(e.target.value)}
-                              placeholder="Ex: Família trouxe caixa nova"
-                              type="text"
-                              value={entryNotes}
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-3 flex gap-2">
-                          <Button
-                            disabled={entryLoading || !entryQuantity}
-                            onClick={() => void handleStockEntry(stock.item_id)}
-                            size="sm"
-                          >
-                            {entryLoading ? "Salvando..." : "Confirmar entrada"}
-                          </Button>
-                          <Button
-                            onClick={() => setOpenEntryItemId(null)}
-                            size="sm"
-                            variant="outline"
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      </div>
+                    {/* Histórico expandível */}
+                    {openHistoryItemId === stock.item_id && patientId ? (
+                      <PatientMovementHistory
+                        itemId={stock.item_id}
+                        patientId={patientId}
+                        token={token ?? ""}
+                      />
                     ) : null}
                   </div>
                 ))}
               </CardContent>
             </Card>
           </section>
+
+          {/* Modal de entrada de estoque — instância única fora do loop */}
+          {entryModalItem && patientId ? (
+            <StockEntryModal
+              item={entryModalItem}
+              onOpenChange={(open) => {
+                if (!open) setEntryModalItem(null)
+              }}
+              onSuccess={() => void refreshStock()}
+              open={entryModalItem !== null}
+              patientId={patientId}
+              token={token ?? ""}
+            />
+          ) : null}
 
           <section className="grid gap-6 xl:grid-cols-2">
             <Card className="bg-white/92">

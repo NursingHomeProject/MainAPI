@@ -75,4 +75,5 @@ export type PatientStockEntryPayload = {
   item_id: string
   quantity: string
   notes?: string | null
+  occurred_at?: string | null
 }
