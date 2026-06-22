@@ -49,10 +49,12 @@ export function AdministrationModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Pré-preenche a dose prescrita sempre que o modal abre
+  // Pré-preenche a dose prescrita sempre que o modal abre.
+  // parseFloat remove zeros desnecessários vindos do backend (ex: "1.000" → "1")
   useEffect(() => {
     if (open) {
-      setQuantity(doseAmount)
+      const parsed = parseFloat(doseAmount)
+      setQuantity(isNaN(parsed) ? doseAmount : String(parsed))
       setNotes("")
       setError(null)
     }
