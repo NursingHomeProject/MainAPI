@@ -348,7 +348,7 @@ export function PrescriptionForm({
                   </Label>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {timesRequired
-                      ? "Obrigatório para a lógica "Horários prescritos". Preencha todos os campos."
+                      ? "Obrigatório para a lógica Horários prescritos. Preencha todos os campos."
                       : "Opcional. Deixe em branco para usar apenas a frequência como base de comparação."}
                   </p>
                 </div>
