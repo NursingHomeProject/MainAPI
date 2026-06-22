@@ -12,6 +12,7 @@ import {
   Plus,
   RefreshCw,
   SquarePen,
+  Syringe,
   TriangleAlert,
 } from "lucide-react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
@@ -25,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getAdministrationDayStatusMeta } from "@/features/calculation/calculation-dose-state"
+import { AdministrationModal } from "@/features/inventory/administration-modal"
 import { PatientMovementHistory } from "@/features/inventory/patient-movement-history"
 import { StockEntryModal } from "@/features/inventory/stock-entry-modal"
 import {
@@ -210,6 +212,8 @@ export function PatientDetailPage() {
   const [stockError, setStockError] = useState<string | null>(null)
   const [entryModalItem, setEntryModalItem] = useState<PatientItemStock | null>(null)
   const [openHistoryItemId, setOpenHistoryItemId] = useState<string | null>(null)
+  const [adminModalItem, setAdminModalItem] = useState<PatientItemStock | null>(null)
+  const [adminDoseAmount, setAdminDoseAmount] = useState<string>("1")
 
   const flashState = location.state as DetailLocationState | null
   const uniqueActiveItems = useMemo(() => {
@@ -351,13 +355,17 @@ export function PatientDetailPage() {
     navigate(location.pathname, { replace: true })
   }, [flashState?.message, location.pathname, navigate])
 
-  async function refreshStock() {
+  async function refreshDoseData() {
     if (!token || !patientId) return
     try {
-      const updated = await getPatientStock(token, patientId)
-      setPatientStock(updated.data)
+      const [stockResult, scheduleResult] = await Promise.allSettled([
+        getPatientStock(token, patientId),
+        getPatientDoseSchedule(token, patientId),
+      ])
+      if (stockResult.status === "fulfilled") setPatientStock(stockResult.value.data)
+      if (scheduleResult.status === "fulfilled") setDoseSchedule(scheduleResult.value.data)
     } catch {
-      // erro silencioso — stock banner já mostra o problema
+      // silencioso — erros já cobertos pelo carregamento principal
     }
   }
 
@@ -662,6 +670,18 @@ export function PatientDetailPage() {
                           Registrar entrada
                         </Button>
                         <Button
+                          onClick={() => {
+                            const activeItem = activeItemByItemId.get(stock.item_id)
+                            setAdminDoseAmount(activeItem?.dose_amount ?? "1")
+                            setAdminModalItem(stock)
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Syringe className="h-4 w-4" />
+                          Registrar administração
+                        </Button>
+                        <Button
                           onClick={() =>
                             setOpenHistoryItemId(
                               openHistoryItemId === stock.item_id ? null : stock.item_id,
@@ -730,8 +750,23 @@ export function PatientDetailPage() {
               onOpenChange={(open) => {
                 if (!open) setEntryModalItem(null)
               }}
-              onSuccess={() => void refreshStock()}
+              onSuccess={() => void refreshDoseData()}
               open={entryModalItem !== null}
+              patientId={patientId}
+              token={token ?? ""}
+            />
+          ) : null}
+
+          {/* Modal de administração de dose — instância única fora do loop */}
+          {adminModalItem && patientId ? (
+            <AdministrationModal
+              doseAmount={adminDoseAmount}
+              item={adminModalItem}
+              onOpenChange={(open) => {
+                if (!open) setAdminModalItem(null)
+              }}
+              onSuccess={() => void refreshDoseData()}
+              open={adminModalItem !== null}
               patientId={patientId}
               token={token ?? ""}
             />

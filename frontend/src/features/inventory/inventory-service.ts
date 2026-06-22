@@ -76,3 +76,29 @@ export function createPatientStockEntry(
     { headers: buildAuthHeaders(token) },
   )
 }
+
+// ── Administração de doses ─────────────────────────────────────────────────
+// ANTI-FRAUDE: occurred_at é deliberadamente ausente deste tipo e desta função.
+// O timestamp é sempre capturado pelo servidor (server_default=func.now() no banco).
+// O frontend nunca envia nem expõe campo de data/hora para administrações.
+
+export type AdministrationPayload = {
+  item_id: string
+  quantity: string
+  notes?: string | null
+}
+
+export function registerDoseAdministration(
+  token: string,
+  patientId: string,
+  payload: AdministrationPayload,
+) {
+  return createInventoryMovement(token, {
+    item_id: payload.item_id,
+    movement_type: "administration",
+    adjustment_operation: null,
+    quantity: payload.quantity,
+    patient_id: patientId,
+    notes: payload.notes ?? null,
+  })
+}
