@@ -90,7 +90,7 @@ def _make_movement_response(patient_id: UUID, item_id: UUID) -> SimpleNamespace:
 class PatientStockRouteTests(unittest.TestCase):
     def setUp(self) -> None:
         self.sentinel_db = object()
-        self.fake_user = SimpleNamespace(id=uuid4(), is_active=True)
+        self.fake_user = SimpleNamespace(id=uuid4(), is_active=True, full_name="Usuário Teste")
         self.patient_id = uuid4()
         self.item_id = uuid4()
 

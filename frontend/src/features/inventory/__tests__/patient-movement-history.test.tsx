@@ -43,6 +43,7 @@ function makeMovement(overrides: Partial<InventoryMovement> = {}): InventoryMove
     patient_id: "patient-1",
     prescription_id: null,
     created_by_user_id: null,
+    created_by_user_name: null,
     movement_type: "entry",
     adjustment_operation: null,
     quantity: "10",
