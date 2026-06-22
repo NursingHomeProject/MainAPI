@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   getComparisonWindowOptions,
   getDefaultComparisonWindowForUsageMode,
@@ -56,19 +55,6 @@ const defaultPrescriptionValues: PrescriptionFormValues = {
   is_active: true,
 }
 
-function formatSpecificTimesForInput(value: string[] | null) {
-  return value?.join("\n") ?? ""
-}
-
-function parseSpecificTimesInput(value: string) {
-  const parsedValues = value
-    .split(/[\n,]/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-
-  return parsedValues.length > 0 ? parsedValues : null
-}
-
 function shouldShowSpecificTimes(usageMode: PrescriptionUsageMode) {
   return usageMode === "fixed"
 }
@@ -94,7 +80,10 @@ export function PrescriptionForm({
   title,
 }: PrescriptionFormProps) {
   const [values, setValues] = useState<PrescriptionFormValues>(defaultValues ?? defaultPrescriptionValues)
-  const [specificTimesInput, setSpecificTimesInput] = useState(formatSpecificTimesForInput(defaultValues?.specific_times ?? null))
+  // Lista de horários como array de strings "HH:MM" — um input por posição
+  const [specificTimesList, setSpecificTimesList] = useState<string[]>(
+    defaultValues?.specific_times ?? [],
+  )
 
   const comparisonWindowOptions = getComparisonWindowOptions(values.usage_mode)
 
@@ -110,7 +99,13 @@ export function PrescriptionForm({
       dose_amount: values.dose_amount,
       frequency_per_day: values.frequency_per_day,
       specific_times: shouldShowSpecificTimes(values.usage_mode)
-        ? parseSpecificTimesInput(specificTimesInput)
+        ? (() => {
+            // Envia apenas os horários preenchidos, na quantidade da frequência
+            const filled = specificTimesList
+              .slice(0, values.frequency_per_day)
+              .filter(Boolean)
+            return filled.length > 0 ? filled : null
+          })()
         : null,
       usage_mode: values.usage_mode,
       comparison_window: values.comparison_window,
@@ -144,7 +139,7 @@ export function PrescriptionForm({
     }))
 
     if (nextUsageMode !== "fixed") {
-      setSpecificTimesInput("")
+      setSpecificTimesList([])
     }
   }
 
@@ -246,12 +241,24 @@ export function PrescriptionForm({
                   id="frequency_per_day"
                   inputMode="numeric"
                   min="1"
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const newFreq = Math.max(1, Number(event.target.value || 1))
                     setValues((current) => ({
                       ...current,
-                      frequency_per_day: Number(event.target.value || 0),
+                      frequency_per_day: newFreq,
                     }))
-                  }
+                    // Sincroniza o número de inputs de horário com a nova frequência
+                    if (shouldShowSpecificTimes(values.usage_mode)) {
+                      setSpecificTimesList((current) => {
+                        if (newFreq > current.length) {
+                          // Adiciona slots vazios para os novos horários
+                          return [...current, ...Array<string>(newFreq - current.length).fill("")]
+                        }
+                        // Remove os slots excedentes
+                        return current.slice(0, newFreq)
+                      })
+                    }
+                  }}
                   placeholder="1"
                   required
                   type="number"
@@ -326,18 +333,32 @@ export function PrescriptionForm({
             </div>
 
             {shouldShowSpecificTimes(values.usage_mode) ? (
-              <div className="space-y-2">
-                <Label htmlFor="specific_times">Horarios específicos</Label>
-                <Textarea
-                  id="specific_times"
-                  onChange={(event) => setSpecificTimesInput(event.target.value)}
-                  placeholder={"08:00\n12:00\n20:00"}
-                  value={specificTimesInput}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Informe um horario por linha ou separado por virgula. Ex.: 08:00, 12:00, 20:00.
-                  Se os horarios não forem validos, o motor faz fallback para comparação pelo total do dia.
-                </p>
+              <div className="space-y-3">
+                <div>
+                  <Label>Horários específicos</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Um campo por dose diária. Deixe em branco para usar apenas a frequência como base.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: Math.max(values.frequency_per_day, 1) }, (_, index) => (
+                    <div className="space-y-1" key={index}>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {index + 1}ª dose
+                      </p>
+                      <Input
+                        id={`specific_time_${index}`}
+                        onChange={(e) => {
+                          const next = [...specificTimesList]
+                          next[index] = e.target.value
+                          setSpecificTimesList(next)
+                        }}
+                        type="time"
+                        value={specificTimesList[index] ?? ""}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
 
