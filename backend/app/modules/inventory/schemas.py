@@ -97,3 +97,35 @@ class ItemStockResponse(BaseModel):
 
 class ItemStockDetailEnvelope(BaseModel):
     data: ItemStockResponse
+
+
+class PatientItemStockResponse(BaseModel):
+    item_id: UUID
+    item_name: str
+    unit_symbol: str
+    current_stock: Decimal
+    minimum_stock: Decimal
+    is_below_minimum: bool
+    total_daily_dose: Decimal
+    estimated_days_remaining: Decimal
+    prescription_ids: list[UUID]
+
+
+class PatientStockListEnvelope(BaseModel):
+    patient_id: UUID
+    data: list[PatientItemStockResponse]
+    total: int
+
+
+class PatientStockEntryCreate(BaseModel):
+    item_id: UUID
+    quantity: Decimal = Field(gt=0)
+    notes: str | None = Field(default=None, max_length=2000)
+    occurred_at: datetime | None = None
+
+    @field_validator("occurred_at")
+    @classmethod
+    def normalize_occurred_at(cls, value: datetime | None) -> datetime | None:
+        if value is None:
+            return value
+        return normalize_datetime_to_project_timezone(value)

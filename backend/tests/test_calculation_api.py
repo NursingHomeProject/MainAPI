@@ -97,7 +97,7 @@ class CalculationApiTests(unittest.TestCase):
     ):
         return self.actual_map.get((patient_id, item_id), Decimal("0"))
 
-    def _fake_calculate_current_stock_for_item(self, db, requested_item_id):
+    def _fake_calculate_current_stock_for_patient_item(self, db, patient_id, requested_item_id):
         return self.stock_map.get(requested_item_id, Decimal("0"))
 
     def _fake_list_administration_records_until_now(
@@ -287,8 +287,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
         ):
             with TestClient(app) as client:
@@ -348,8 +348,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -426,8 +426,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -477,8 +477,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_calculate_actual_consumption_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -622,8 +622,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -750,8 +750,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -891,8 +891,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -1014,8 +1014,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -1114,8 +1114,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -1182,8 +1182,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -1287,8 +1287,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -1422,8 +1422,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
             patch(
                 "app.modules.calculation.services._list_active_projection_pairs",
@@ -1488,8 +1488,8 @@ class CalculationApiTests(unittest.TestCase):
                 side_effect=self._fake_list_administration_records_until_now,
             ),
             patch(
-                "app.modules.calculation.services.calculate_current_stock_for_item",
-                side_effect=self._fake_calculate_current_stock_for_item,
+                "app.modules.calculation.services.calculate_current_stock_for_patient_item",
+                side_effect=self._fake_calculate_current_stock_for_patient_item,
             ),
         ):
             with TestClient(app) as client:

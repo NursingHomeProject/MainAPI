@@ -5,7 +5,9 @@ import {
   Bell,
   ClipboardList,
   Clock3,
+  Package,
   Pill,
+  Plus,
   RefreshCw,
   SquarePen,
   TriangleAlert,
@@ -26,6 +28,8 @@ import {
   getPatientConsumptionSummary,
   getPatientDoseSchedule,
   getPatientDetails,
+  getPatientStock,
+  createPatientStockEntry,
 } from "@/features/patients/patient-service"
 import {
   formatExpectedRange,
@@ -48,6 +52,7 @@ import type {
   PatientConsumptionSummary,
   PatientDetails,
 } from "@/types/patient"
+import type { PatientItemStock } from "@/types/inventory"
 
 type DetailLocationState = {
   message?: string
@@ -198,6 +203,13 @@ export function PatientDetailPage() {
   const [consumptionError, setConsumptionError] = useState<string | null>(null)
   const [doseScheduleError, setDoseScheduleError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [patientStock, setPatientStock] = useState<PatientItemStock[]>([])
+  const [stockError, setStockError] = useState<string | null>(null)
+  const [openEntryItemId, setOpenEntryItemId] = useState<string | null>(null)
+  const [entryQuantity, setEntryQuantity] = useState("")
+  const [entryNotes, setEntryNotes] = useState("")
+  const [entryLoading, setEntryLoading] = useState(false)
+  const [entryError, setEntryError] = useState<string | null>(null)
 
   const flashState = location.state as DetailLocationState | null
   const uniqueActiveItems = useMemo(() => {
@@ -269,11 +281,13 @@ export function PatientDetailPage() {
         activeItemsResult,
         consumptionResult,
         doseScheduleResult,
+        stockResult,
       ] = await Promise.allSettled([
         getPatientDetails(token, patientId),
         getPatientActiveItems(token, patientId),
         getPatientConsumptionSummary(token, patientId),
         getPatientDoseSchedule(token, patientId),
+        getPatientStock(token, patientId),
       ])
 
       if (detailsResult.status !== "fulfilled") {
@@ -302,13 +316,23 @@ export function PatientDetailPage() {
         setDoseSchedule(null)
         setDoseScheduleError(getErrorMessage(doseScheduleResult.reason))
       }
+
+      if (stockResult.status === "fulfilled") {
+        setPatientStock(stockResult.value.data)
+        setStockError(null)
+      } else {
+        setPatientStock([])
+        setStockError(getErrorMessage(stockResult.reason))
+      }
     } catch (requestError) {
       setPatient(null)
       setActiveItems([])
       setConsumptionSummary(null)
       setDoseSchedule(null)
+      setPatientStock([])
       setConsumptionError(null)
       setDoseScheduleError(null)
+      setStockError(null)
       setError(getErrorMessage(requestError))
     } finally {
       setIsLoading(false)
@@ -326,6 +350,29 @@ export function PatientDetailPage() {
 
     navigate(location.pathname, { replace: true })
   }, [flashState?.message, location.pathname, navigate])
+
+  async function handleStockEntry(itemId: string) {
+    if (!token || !patientId || !entryQuantity) return
+    setEntryLoading(true)
+    setEntryError(null)
+    try {
+      await createPatientStockEntry(token, patientId, {
+        item_id: itemId,
+        quantity: entryQuantity,
+        notes: entryNotes || null,
+      })
+      // Recarrega apenas o estoque sem recarregar toda a página
+      const updated = await getPatientStock(token, patientId)
+      setPatientStock(updated.data)
+      setOpenEntryItemId(null)
+      setEntryQuantity("")
+      setEntryNotes("")
+    } catch (err) {
+      setEntryError(getErrorMessage(err))
+    } finally {
+      setEntryLoading(false)
+    }
+  }
 
   return (
     <div className="grid gap-6">
@@ -559,6 +606,156 @@ export function PatientDetailPage() {
                     ))}
                   </div>
                 ) : null}
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* ── Estoque individual por medicamento ─────────────────────── */}
+          <section>
+            <Card className="bg-white/92">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  Estoque por medicamento
+                </CardTitle>
+                <CardDescription>
+                  Saldo individual de cada medicamento fornecido pela família. Registre entradas sempre que a família trouxer uma nova remessa.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {stockError ? (
+                  <FeedbackBanner
+                    message={stockError}
+                    title="Não foi possível carregar o estoque"
+                    variant="error"
+                  />
+                ) : null}
+
+                {!stockError && patientStock.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border/80 bg-secondary/25 px-4">
+                    <EmptyState
+                      description="O estoque individual aparece aqui quando o paciente tem prescrições ativas."
+                      icon={Package}
+                      title="Nenhum medicamento com estoque"
+                    />
+                  </div>
+                ) : null}
+
+                {patientStock.map((stock) => (
+                  <div
+                    className="rounded-2xl border border-border/70 bg-secondary/35 p-4"
+                    key={stock.item_id}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium">{stock.item_name}</p>
+                        <p className="text-muted-foreground">
+                          Dose diária: {formatDecimalAsInteger(stock.total_daily_dose)} {stock.unit_symbol}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={stock.is_below_minimum ? "warning" : "success"}>
+                          {stock.is_below_minimum ? "Estoque baixo" : "Estoque ok"}
+                        </Badge>
+                        <Button
+                          onClick={() => {
+                            if (openEntryItemId === stock.item_id) {
+                              setOpenEntryItemId(null)
+                            } else {
+                              setOpenEntryItemId(stock.item_id)
+                              setEntryQuantity("")
+                              setEntryNotes("")
+                              setEntryError(null)
+                            }
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Registrar entrada
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <p className="text-muted-foreground">Saldo atual</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {formatDecimalAsInteger(stock.current_stock)} {stock.unit_symbol}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Cobertura estimada</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {Number(stock.estimated_days_remaining) > 0
+                            ? `${formatDecimalAsInteger(stock.estimated_days_remaining)} dias`
+                            : "Sem cobertura"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Estoque mínimo</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {formatDecimalAsInteger(stock.minimum_stock)} {stock.unit_symbol}
+                        </p>
+                      </div>
+                    </div>
+
+                    {openEntryItemId === stock.item_id ? (
+                      <div className="mt-4 rounded-2xl border border-border/70 bg-background/80 p-4">
+                        <p className="mb-3 font-medium">Registrar entrada — {stock.item_name}</p>
+                        {entryError ? (
+                          <FeedbackBanner message={entryError} variant="error" />
+                        ) : null}
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground" htmlFor={`qty-${stock.item_id}`}>
+                              Quantidade ({stock.unit_symbol})
+                            </label>
+                            <input
+                              className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                              id={`qty-${stock.item_id}`}
+                              min="0.001"
+                              onChange={(e) => setEntryQuantity(e.target.value)}
+                              placeholder="Ex: 30"
+                              step="1"
+                              type="number"
+                              value={entryQuantity}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground" htmlFor={`notes-${stock.item_id}`}>
+                              Observações (opcional)
+                            </label>
+                            <input
+                              className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                              id={`notes-${stock.item_id}`}
+                              onChange={(e) => setEntryNotes(e.target.value)}
+                              placeholder="Ex: Família trouxe caixa nova"
+                              type="text"
+                              value={entryNotes}
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <Button
+                            disabled={entryLoading || !entryQuantity}
+                            onClick={() => void handleStockEntry(stock.item_id)}
+                            size="sm"
+                          >
+                            {entryLoading ? "Salvando..." : "Confirmar entrada"}
+                          </Button>
+                          <Button
+                            onClick={() => setOpenEntryItemId(null)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </section>

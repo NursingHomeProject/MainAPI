@@ -5,10 +5,11 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.clock import (
+    get_current_date,
     get_current_datetime,
     normalize_datetime_to_project_timezone,
 )
@@ -266,3 +267,83 @@ def get_item_stock_summary(db: Session, item_id: UUID) -> tuple[Item, Decimal]:
     item = get_item_for_inventory_or_raise(db, item_id, require_active=False)
     current_stock = calculate_current_stock_for_item(db, item_id)
     return item, current_stock
+
+
+def calculate_current_stock_for_patient_item(
+    db: Session,
+    patient_id: UUID,
+    item_id: UUID,
+) -> Decimal:
+    """Saldo do estoque individual de um paciente para um item específico."""
+    stock_expression = build_stock_balance_expression()
+    statement = (
+        select(func.coalesce(func.sum(stock_expression), 0))
+        .where(InventoryMovement.item_id == item_id)
+        .where(InventoryMovement.patient_id == patient_id)
+    )
+    current_stock = db.scalar(statement)
+    if isinstance(current_stock, Decimal):
+        return current_stock
+    return Decimal(str(current_stock))
+
+
+def list_patient_stock(db: Session, patient_id: UUID) -> list[dict]:
+    """
+    Retorna o estoque individual por item para todos os itens com prescrições
+    ativas do paciente. Agrupa por item — múltiplas prescrições do mesmo item
+    somam a dose diária.
+    """
+    today = get_current_date()
+
+    statement = (
+        select(Prescription, Item)
+        .join(Item, Item.id == Prescription.item_id)
+        .options(selectinload(Item.unit))
+        .where(Prescription.patient_id == patient_id)
+        .where(Prescription.is_active.is_(True))
+        .where(Prescription.start_date <= today)
+        .where(
+            or_(
+                Prescription.end_date.is_(None),
+                Prescription.end_date >= today,
+            )
+        )
+        .order_by(Item.name.asc())
+    )
+    rows = list(db.execute(statement).all())
+
+    # Agrupa por item_id: soma doses diárias e coleta prescription_ids
+    grouped: dict[UUID, dict] = {}
+    for prescription, item in rows:
+        daily = prescription.dose_amount * prescription.frequency_per_day
+        if item.id not in grouped:
+            grouped[item.id] = {
+                "item_id": item.id,
+                "item_name": item.name,
+                "unit_symbol": item.unit.symbol if item.unit else "",
+                "minimum_stock": item.minimum_stock,
+                "total_daily_dose": Decimal("0"),
+                "prescription_ids": [],
+            }
+        grouped[item.id]["total_daily_dose"] += daily
+        grouped[item.id]["prescription_ids"].append(prescription.id)
+
+    results = []
+    for item_id, data in grouped.items():
+        current_stock = calculate_current_stock_for_patient_item(db, patient_id, item_id)
+        daily = data["total_daily_dose"]
+        estimated_days = (
+            (current_stock / daily).quantize(Decimal("1"))
+            if daily > 0 and current_stock > 0
+            else Decimal("0")
+        )
+        results.append(
+            {
+                **data,
+                "current_stock": current_stock,
+                "is_below_minimum": current_stock < data["minimum_stock"],
+                "estimated_days_remaining": estimated_days,
+            }
+        )
+
+    return results

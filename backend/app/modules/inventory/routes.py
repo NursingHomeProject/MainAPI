@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.modules.auth.dependencies import CurrentUser, get_current_active_user
 from app.modules.inventory.models import InventoryMovement, InventoryMovementType
+from app.modules.inventory.models import InventoryMovementType
 from app.modules.inventory.schemas import (
     InventoryMovementCreate,
     InventoryMovementDetailEnvelope,
@@ -16,16 +17,22 @@ from app.modules.inventory.schemas import (
     InventoryMovementResponse,
     ItemStockDetailEnvelope,
     ItemStockResponse,
+    PatientItemStockResponse,
+    PatientStockEntryCreate,
+    PatientStockListEnvelope,
 )
 from app.modules.inventory.services import (
     create_inventory_movement,
     get_inventory_stock_effect,
     get_item_stock_summary,
+    get_patient_for_inventory_or_raise,
     list_inventory_movements,
+    list_patient_stock,
 )
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 stock_router = APIRouter(dependencies=[Depends(get_current_active_user)])
+patient_stock_router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 def build_inventory_movement_response(movement: InventoryMovement) -> InventoryMovementResponse:
@@ -107,3 +114,48 @@ def get_item_stock(
             is_below_minimum=current_stock < item.minimum_stock,
         )
     )
+
+
+@patient_stock_router.get(
+    "/{patient_id}/stock",
+    response_model=PatientStockListEnvelope,
+    summary="Get individual stock per item for a patient",
+)
+def get_patient_stock(
+    patient_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+) -> PatientStockListEnvelope:
+    get_patient_for_inventory_or_raise(db, patient_id)
+    items = list_patient_stock(db, patient_id)
+    return PatientStockListEnvelope(
+        patient_id=patient_id,
+        data=[PatientItemStockResponse(**row) for row in items],
+        total=len(items),
+    )
+
+
+@patient_stock_router.post(
+    "/{patient_id}/stock/movements",
+    response_model=InventoryMovementDetailEnvelope,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register medication entry for a patient (family supply)",
+)
+def create_patient_stock_entry(
+    patient_id: UUID,
+    payload: PatientStockEntryCreate,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+) -> InventoryMovementDetailEnvelope:
+    get_patient_for_inventory_or_raise(db, patient_id)
+    create_payload = InventoryMovementCreate(
+        item_id=payload.item_id,
+        movement_type=InventoryMovementType.ENTRY,
+        quantity=payload.quantity,
+        patient_id=patient_id,
+        notes=payload.notes,
+        occurred_at=payload.occurred_at,
+    )
+    movement = create_inventory_movement(
+        db, create_payload, created_by_user_id=current_user.id
+    )
+    return InventoryMovementDetailEnvelope(data=build_inventory_movement_response(movement))

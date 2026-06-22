@@ -3,6 +3,10 @@ import {
   getPatientConsumptionSummary as getPatientConsumptionSummaryFromCalculation,
   getPatientDoseSchedule as getPatientDoseScheduleFromCalculation,
 } from "@/features/calculation/calculation-service"
+import {
+  getPatientStock as getPatientStockFromInventory,
+  createPatientStockEntry as createPatientStockEntryFromInventory,
+} from "@/features/inventory/inventory-service"
 import type {
   PatientCreatePayload,
   PatientActiveItemsResponse,
@@ -12,6 +16,7 @@ import type {
   PatientListResponse,
   PatientUpdatePayload,
 } from "@/types/patient"
+import type { PatientStockEntryPayload } from "@/types/inventory"
 
 function buildAuthHeaders(token: string, contentType = "application/json") {
   return {
@@ -78,6 +83,18 @@ export function getPatientDoseSchedule(
     patientId,
     options,
   ) as Promise<PatientDoseScheduleResponse>
+}
+
+export function getPatientStock(token: string, patientId: string) {
+  return getPatientStockFromInventory(token, patientId)
+}
+
+export function createPatientStockEntry(
+  token: string,
+  patientId: string,
+  payload: PatientStockEntryPayload,
+) {
+  return createPatientStockEntryFromInventory(token, patientId, payload)
 }
 
 export function createPatient(token: string, payload: PatientCreatePayload) {

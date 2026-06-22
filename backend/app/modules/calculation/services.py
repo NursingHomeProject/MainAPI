@@ -50,7 +50,7 @@ from app.modules.calculation.schemas import (
 )
 from app.modules.internal_alerts import services as internal_alert_services
 from app.modules.inventory.models import InventoryMovement, InventoryMovementType
-from app.modules.inventory.services import calculate_current_stock_for_item
+from app.modules.inventory.services import calculate_current_stock_for_patient_item
 from app.modules.items.models import Item
 from app.modules.patients.models import Patient
 from app.modules.prescriptions.models import Prescription
@@ -316,7 +316,7 @@ def build_basic_patient_item_calculation(
         if usage_plan.schedule_invalid_reason is not None:
             administration_day_status = CalculationAdministrationDayStatus.INVALID_SCHEDULE
             administration_day_reason = usage_plan.schedule_invalid_reason
-    current_stock = calculate_current_stock_for_item(db, item_id)
+    current_stock = calculate_current_stock_for_patient_item(db, patient_id, item_id)
 
     return build_basic_calculation_payload(
         reference_date=resolved_reference_date,

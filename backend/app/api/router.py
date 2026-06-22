@@ -10,6 +10,7 @@ from app.modules.health.routes import router as health_router
 from app.modules.internal_alerts.routes import router as alerts_router
 from app.modules.inventory.routes import router as inventory_router
 from app.modules.inventory.routes import stock_router as item_stock_router
+from app.modules.inventory.routes import patient_stock_router
 from app.modules.items.routes import router as items_router
 from app.modules.measurement_units.routes import router as measurement_units_router
 from app.modules.patients.routes import router as patients_router
@@ -56,6 +57,11 @@ api_router.include_router(
     patient_prescriptions_router,
     prefix="/patients",
     tags=["prescriptions"],
+)
+api_router.include_router(
+    patient_stock_router,
+    prefix="/patients",
+    tags=["inventory"],
 )
 api_router.include_router(
     prescriptions_router,

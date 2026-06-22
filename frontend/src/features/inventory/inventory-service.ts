@@ -5,6 +5,8 @@ import type {
   InventoryMovementFilters,
   InventoryMovementListResponse,
   ItemStockDetailResponse,
+  PatientStockEntryPayload,
+  PatientStockListResponse,
 } from "@/types/inventory"
 
 function buildAuthHeaders(token: string) {
@@ -53,4 +55,24 @@ export function getItemStock(token: string, itemId: string) {
       Authorization: `Bearer ${token}`,
     },
   })
+}
+
+export function getPatientStock(token: string, patientId: string) {
+  return http.get<PatientStockListResponse>(`/patients/${patientId}/stock`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+}
+
+export function createPatientStockEntry(
+  token: string,
+  patientId: string,
+  payload: PatientStockEntryPayload,
+) {
+  return http.post<InventoryMovementDetailResponse>(
+    `/patients/${patientId}/stock/movements`,
+    JSON.stringify(payload),
+    { headers: buildAuthHeaders(token) },
+  )
 }

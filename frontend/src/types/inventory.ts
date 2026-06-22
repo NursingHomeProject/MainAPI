@@ -52,3 +52,27 @@ export type ItemStock = {
 export type InventoryMovementListResponse = ApiListEnvelope<InventoryMovement>
 export type InventoryMovementDetailResponse = ApiEnvelope<InventoryMovement>
 export type ItemStockDetailResponse = ApiEnvelope<ItemStock>
+
+export type PatientItemStock = {
+  item_id: string
+  item_name: string
+  unit_symbol: string
+  current_stock: string
+  minimum_stock: string
+  is_below_minimum: boolean
+  total_daily_dose: string
+  estimated_days_remaining: string
+  prescription_ids: string[]
+}
+
+export type PatientStockListResponse = {
+  patient_id: string
+  data: PatientItemStock[]
+  total: number
+}
+
+export type PatientStockEntryPayload = {
+  item_id: string
+  quantity: string
+  notes?: string | null
+}
