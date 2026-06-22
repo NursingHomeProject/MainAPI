@@ -89,7 +89,7 @@ export function InventoryMovementForm({
   return (
     <Card className="bg-white/92">
       <CardHeader>
-        <CardTitle>Lancar movimentacao</CardTitle>
+        <CardTitle>Lançar movimentação</CardTitle>
         <CardDescription>Registre entradas, administrações, perdas, ajustes ou descartes.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -99,7 +99,7 @@ export function InventoryMovementForm({
           </div>
         ) : activeItems.length === 0 ? (
           <FeedbackBanner
-            message="Não ha itens ativos disponiveis para movimentacao. Cadastre um item ativo antes de testar estoque."
+            message="Não há itens ativos disponíveis para movimentação. Cadastre um item ativo antes de testar estoque."
             variant="warning"
           />
         ) : (
@@ -123,7 +123,7 @@ export function InventoryMovementForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="movement-type">Tipo de movimentacao</Label>
+                <Label htmlFor="movement-type">Tipo de movimentação</Label>
                 <NativeSelect
                   id="movement-type"
                   onChange={(event) =>
@@ -215,7 +215,7 @@ export function InventoryMovementForm({
                 id="movement-notes"
                 maxLength={2000}
                 onChange={(event) => setValues((current) => ({ ...current, notes: event.target.value || null }))}
-                placeholder="Observações opcionais sobre a movimentacao."
+                placeholder="Observações opcionais sobre a movimentação."
                 value={values.notes ?? ""}
               />
             </div>
@@ -224,7 +224,7 @@ export function InventoryMovementForm({
 
             <div className="flex justify-end">
               <Button disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Salvando..." : "Lancar movimentacao"}
+                {isSubmitting ? "Salvando..." : "Lançar movimentação"}
               </Button>
             </div>
           </form>

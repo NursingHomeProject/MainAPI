@@ -197,7 +197,7 @@ export function InventoryPage() {
         getItemStock(token, nextItemId),
       ])
 
-      setSuccessMessage("Movimentacao registrada com sucesso.")
+      setSuccessMessage("Movimentação registrada com sucesso.")
       setHistoryError(null)
       setMovements(updatedMovements.data)
       setHistoryItemId(nextItemId)
@@ -231,8 +231,8 @@ export function InventoryPage() {
             Atualizar tudo
           </Button>
         }
-        description="Acompanhe saldos, registre movimentacoes e consulte o histórico dos itens."
-        title="Estoque e movimentacoes"
+        description="Acompanhe saldos, registre movimentações e consulte o histórico dos itens."
+        title="Estoque e movimentações"
       />
 
       {successMessage ? <FeedbackBanner message={successMessage} variant="success" /> : null}
@@ -244,7 +244,7 @@ export function InventoryPage() {
               <PackageSearch className="h-4 w-4 text-primary" />
               Saldo por item
             </CardTitle>
-            <CardDescription>Consulte o saldo atual e o estoque minimo de cada item.</CardDescription>
+            <CardDescription>Consulte o saldo atual e o estoque mínimo de cada item.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -293,7 +293,7 @@ export function InventoryPage() {
                       <p className="text-sm text-muted-foreground">{getItemTypeLabel(stockSummary.item_type)}</p>
                     </div>
                     <Badge variant={stockSummary.is_below_minimum ? "warning" : "success"}>
-                      {stockSummary.is_below_minimum ? "Abaixo do minimo" : "Saldo ok"}
+                      {stockSummary.is_below_minimum ? "Abaixo do mínimo" : "Saldo ok"}
                     </Badge>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -304,7 +304,7 @@ export function InventoryPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Estoque minimo</p>
+                      <p className="text-sm text-muted-foreground">Estoque mínimo</p>
                       <p className="text-2xl font-semibold">
                         {formatDecimalAsInteger(stockSummary.minimum_stock)} {stockSummary.unit_symbol}
                       </p>
@@ -334,9 +334,9 @@ export function InventoryPage() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <ArrowDownUp className="h-4 w-4 text-primary" />
-              Histórico de movimentacoes
+              Histórico de movimentações
             </CardTitle>
-            <CardDescription>Veja as movimentacoes registradas e use os filtros para encontrar o que precisa.</CardDescription>
+            <CardDescription>Veja as movimentações registradas e use os filtros para encontrar o que precisa.</CardDescription>
           </div>
           <Button onClick={() => void loadMovements()} variant="outline">
             <RefreshCw className="h-4 w-4" />
@@ -402,7 +402,7 @@ export function InventoryPage() {
 
           {historyHasFilters ? (
             <FeedbackBanner
-              message="Filtros ativos para facilitar a consulta das movimentacoes."
+              message="Filtros ativos para facilitar a consulta das movimentações."
               variant="info"
             />
           ) : null}
@@ -426,9 +426,9 @@ export function InventoryPage() {
           {!isHistoryLoading && movements.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border/80 bg-secondary/25 px-4">
               <EmptyState
-                description="Ajuste os filtros ou registre uma nova movimentacao para preencher o histórico."
+                description="Ajuste os filtros ou registre uma nova movimentação para preencher o histórico."
                 icon={ArrowDownUp}
-                title="Nenhuma movimentacao encontrada"
+                title="Nenhuma movimentação encontrada"
               />
             </div>
           ) : null}

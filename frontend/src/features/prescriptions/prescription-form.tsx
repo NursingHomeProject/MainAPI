@@ -241,7 +241,7 @@ export function PrescriptionForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="frequency_per_day">Frequencia por dia</Label>
+                <Label htmlFor="frequency_per_day">Frequência por dia</Label>
                 <Input
                   id="frequency_per_day"
                   inputMode="numeric"
@@ -378,7 +378,7 @@ export function PrescriptionForm({
             {shouldShowExpectedRange(values.usage_mode) ? (
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="min_expected_per_day">Minimo esperado por dia</Label>
+                  <Label htmlFor="min_expected_per_day">Mínimo esperado por dia</Label>
                   <Input
                     id="min_expected_per_day"
                     inputMode="decimal"
@@ -393,7 +393,7 @@ export function PrescriptionForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="max_expected_per_day">Maximo esperado por dia</Label>
+                  <Label htmlFor="max_expected_per_day">Máximo esperado por dia</Label>
                   <Input
                     id="max_expected_per_day"
                     inputMode="decimal"
@@ -409,8 +409,8 @@ export function PrescriptionForm({
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-xs text-muted-foreground">
-                    Use a faixa esperada para insumos variaveis ou uso sob demanda.
-                    Se ela não for informada, o sistema usa dose x frequencia como base operacional.
+                    Use a faixa esperada para insumos variáveis ou uso sob demanda.
+                    Se ela não for informada, o sistema usa dose x frequência como base operacional.
                   </p>
                 </div>
               </div>

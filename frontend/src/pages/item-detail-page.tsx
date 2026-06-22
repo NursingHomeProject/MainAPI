@@ -96,7 +96,7 @@ function getItemSignalLabel(
     return "Acompanhamento recomendado"
   }
 
-  return "Situação estavel"
+  return "Situação estável"
 }
 
 export function ItemDetailPage() {
@@ -298,7 +298,7 @@ export function ItemDetailPage() {
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {projection.divergence.percent_gap
-                      ? `${formatSignedDecimalAsInteger(projection.divergence.percent_gap)}% em relacao ao previsto`
+                      ? `${formatSignedDecimalAsInteger(projection.divergence.percent_gap)}% em relação ao previsto`
                       : "Sem base suficiente para comparar."}
                   </p>
                 </div>

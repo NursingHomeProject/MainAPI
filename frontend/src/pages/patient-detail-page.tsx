@@ -498,7 +498,7 @@ export function PatientDetailPage() {
                     </div>
                     <div className="rounded-2xl border border-border/70 bg-secondary/35 p-4">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Concluidas
+                        Concluídas
                       </p>
                       <p className="mt-2 text-2xl font-semibold">{doseSchedule.completed_dose_count}</p>
                     </div>
@@ -530,7 +530,7 @@ export function PatientDetailPage() {
                 {!doseScheduleError && doseSchedule?.total_doses === 0 ? (
                   <div className="rounded-2xl border border-dashed border-border/80 bg-secondary/25 px-4">
                     <EmptyState
-                      description="A agenda do dia aparece aqui quando existem prescrições fixas com horarios definidos."
+                      description="A agenda do dia aparece aqui quando existem prescrições fixas com horários definidos."
                       icon={Clock3}
                       title="Nenhuma dose programada hoje"
                     />
@@ -548,7 +548,7 @@ export function PatientDetailPage() {
                           <div>
                             <p className="font-medium">{dose.item_name}</p>
                             <p className="text-muted-foreground">
-                              Prevista as {formatTime(dose.scheduled_at)}
+                              Prevista às {formatTime(dose.scheduled_at)}
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -568,7 +568,7 @@ export function PatientDetailPage() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-muted-foreground">Tolerancia até</p>
+                            <p className="text-muted-foreground">Tolerância até</p>
                             <p className="font-medium text-foreground">
                               {formatTime(dose.tolerated_until)}
                             </p>
@@ -578,14 +578,14 @@ export function PatientDetailPage() {
                             <p className="font-medium text-foreground">
                               {dose.administration_day_status
                                 ? getAdministrationDayStatusMeta(dose.administration_day_status).label
-                                : "Sem classificacao"}
+                                : "Sem classificação"}
                             </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Registro</p>
                             <p className="font-medium text-foreground">
                               {dose.matched_occurred_at
-                                ? `As ${formatTime(dose.matched_occurred_at)}`
+                                ? `Às ${formatTime(dose.matched_occurred_at)}`
                                 : "Ainda não registrado"}
                             </p>
                           </div>
@@ -821,7 +821,7 @@ export function PatientDetailPage() {
                       </div>
                       <div className="rounded-2xl border border-border/70 bg-secondary/35 p-4">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                          Divergencias detectadas
+                          Divergências detectadas
                         </p>
                         <p className="mt-2 text-2xl font-semibold">
                           {consumptionOperationalSummary.divergencesDetected}
@@ -863,7 +863,7 @@ export function PatientDetailPage() {
                       <div>
                         <p className="font-medium">{projection.item_name}</p>
                         <p className="text-muted-foreground">
-                          Consumo diario previsto: {formatProjectionMetric(projection.daily_consumption, projection.unit_symbol)}
+                          Consumo diário previsto: {formatProjectionMetric(projection.daily_consumption, projection.unit_symbol)}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -940,18 +940,18 @@ export function PatientDetailPage() {
                       </div>
                       <div>
                         <p className="text-muted-foreground">
-                          {scheduleTracked ? "Situação do dia" : "Divergencia"}
+                          {scheduleTracked ? "Situação do dia" : "Divergência"}
                         </p>
                         <p className="font-medium text-foreground">
                           {scheduleTracked
-                            ? administrationDayMeta?.label || "Sem classificacao"
+                            ? administrationDayMeta?.label || "Sem classificação"
                             : projection.divergence
                               ? `${formatSignedDecimalAsInteger(projection.divergence)} ${projection.unit_symbol}`
                               : "Não disponível"}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {scheduleTracked
-                            ? projection.administration_day_reason || "Agenda avaliada por horario."
+                            ? projection.administration_day_reason || "Agenda avaliada por horário."
                             : getDivergenceLabel(projection.divergence_status)}
                         </p>
                       </div>
@@ -982,13 +982,13 @@ export function PatientDetailPage() {
                           <div>
                             <p className="font-medium">Doses previstas hoje</p>
                             <p className="text-sm text-muted-foreground">
-                              O paciente so fica em atraso quando a dose sai da janela de tolerancia.
+                              O paciente só fica em atraso quando a dose sai da janela de tolerância.
                             </p>
                           </div>
                           {projection.dose_schedule ? (
                             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                               <Badge variant="outline">
-                                {projection.dose_schedule.completed_dose_count} concluidas
+                                {projection.dose_schedule.completed_dose_count} concluídas
                               </Badge>
                               <Badge variant="outline">
                                 {projection.dose_schedule.due_now_dose_count} na janela
@@ -1079,7 +1079,7 @@ export function PatientDetailPage() {
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <div>
-                          <p className="text-muted-foreground">Horarios</p>
+                          <p className="text-muted-foreground">Horários</p>
                           <p className="font-medium text-foreground">
                             {activeItem.specific_times?.join(", ") || "Não informados"}
                           </p>
@@ -1092,7 +1092,7 @@ export function PatientDetailPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Duracao estimada</p>
+                          <p className="text-muted-foreground">Duração estimada</p>
                           <p className="font-medium text-foreground">
                             {formatDaysRemaining(projection?.days_remaining ?? null)}
                           </p>
@@ -1122,7 +1122,7 @@ export function PatientDetailPage() {
                       </div>
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         <div>
-                          <p className="text-muted-foreground">Consumo diario previsto</p>
+                          <p className="text-muted-foreground">Consumo diário previsto</p>
                           <p className="font-medium text-foreground">
                             {formatProjectionMetric(
                               projection?.daily_consumption ?? null,
@@ -1186,7 +1186,7 @@ export function PatientDetailPage() {
                           </p>
                         </div>
                         <Badge variant={activeItem.is_below_minimum ? "warning" : "outline"}>
-                          {activeItem.is_below_minimum ? "Abaixo do minimo" : "Disponível"}
+                          {activeItem.is_below_minimum ? "Abaixo do mínimo" : "Disponível"}
                         </Badge>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -1197,7 +1197,7 @@ export function PatientDetailPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Estoque minimo</p>
+                          <p className="text-muted-foreground">Estoque mínimo</p>
                           <p className="font-medium text-foreground">
                             {formatDecimalAsInteger(activeItem.minimum_stock)} {activeItem.unit_symbol}
                           </p>
@@ -1223,7 +1223,7 @@ export function PatientDetailPage() {
                 {patient.open_alerts.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-border/80 bg-secondary/25 px-4">
                     <EmptyState
-                      description="Quando houver alertas vinculados ao paciente, eles aparecerao aqui."
+                      description="Quando houver alertas vinculados ao paciente, eles aparecerão aqui."
                       icon={Bell}
                       title="Nenhum alerta aberto"
                     />
@@ -1255,9 +1255,9 @@ export function PatientDetailPage() {
                 {patient.recent_movements.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-border/80 bg-secondary/25 px-4">
                     <EmptyState
-                      description="As ultimas administrações e outras movimentacoes deste paciente aparecerao aqui."
+                      description="As últimas administrações e outras movimentações deste paciente aparecerão aqui."
                       icon={Clock3}
-                      title="Nenhuma movimentacao recente"
+                      title="Nenhuma movimentação recente"
                     />
                   </div>
                 ) : (

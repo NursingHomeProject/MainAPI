@@ -174,7 +174,7 @@ export function AlertsPage() {
         await syncCalculationAlerts(token)
       } catch {
         syncWarning =
-          "Não foi possível atualizar os alertas automáticos agora. Exibindo os dados mais recentes disponiveis."
+          "Não foi possível atualizar os alertas automáticos agora. Exibindo os dados mais recentes disponíveis."
       }
 
       const [alertsResponse, summaryResponse, candidatesResponse] = await Promise.all([

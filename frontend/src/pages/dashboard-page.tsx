@@ -55,13 +55,13 @@ const summaryCards = [
     label: "Prescrições ativas",
   },
   {
-    description: "Alertas internos pendentes de resolucao.",
+    description: "Alertas internos pendentes de resolução.",
     icon: AlertTriangle,
     key: "open_alerts",
     label: "Alertas abertos",
   },
   {
-    description: "Itens que já estao abaixo do estoque minimo.",
+    description: "Itens que já estão abaixo do estoque mínimo.",
     icon: TriangleAlert,
     key: "low_stock_items",
     label: "Estoque baixo",
@@ -85,10 +85,10 @@ const calculationCards = [
     description: "Casos em que o consumo realizado esta acima ou abaixo do esperado.",
     icon: ClipboardList,
     key: "relevant_divergences",
-    label: "Divergencias",
+    label: "Divergências",
   },
   {
-    description: "Pacientes com pelo menos um item exigindo acompanhamento prioritario.",
+    description: "Pacientes com pelo menos um item exigindo acompanhamento prioritário.",
     icon: Users,
     key: "patients_at_risk",
     label: "Pacientes com risco",
@@ -117,7 +117,7 @@ const workflowSteps = [
     to: "/prescriptions",
   },
   {
-    description: "Lance movimentacoes e consulte saldo por item.",
+    description: "Lance movimentações e consulte saldo por item.",
     label: "Estoque",
     to: "/inventory",
   },
@@ -155,7 +155,7 @@ function getSystemStatus(summary: DashboardSummary | null) {
     summary.low_stock_items > 0
   ) {
     return {
-      description: "Existem itens críticos, alertas abertos ou necessidade de reposicao que merecem atenção.",
+      description: "Existem itens críticos, alertas abertos ou necessidade de reposição que merecem atenção.",
       label: "Atenção operacional",
       variant: "warning" as const,
     }
@@ -166,15 +166,15 @@ function getSystemStatus(summary: DashboardSummary | null) {
     summary.calculation.items_at_risk > 0
   ) {
     return {
-      description: "O sistema esta estavel, mas ha sinais de consumo que merecem acompanhamento.",
+      description: "O sistema está estável, mas há sinais de consumo que merecem acompanhamento.",
       label: "Acompanhamento recomendado",
       variant: "outline" as const,
     }
   }
 
   return {
-    description: "Não ha alertas abertos, itens críticos nem divergencias relevantes no resumo atual.",
-    label: "Situação estavel",
+    description: "Não há alertas abertos, itens críticos nem divergências relevantes no resumo atual.",
+    label: "Situação estável",
     variant: "success" as const,
   }
 }
@@ -303,7 +303,7 @@ export function DashboardPage() {
         <Card className="bg-white/92">
           <CardHeader>
             <CardTitle>Situação do sistema</CardTitle>
-            <CardDescription>Resumo rapido para orientar o acompanhamento diario.</CardDescription>
+            <CardDescription>Resumo rápido para orientar o acompanhamento diário.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div className="rounded-2xl border border-border/70 bg-secondary/35 p-4">
@@ -318,7 +318,7 @@ export function DashboardPage() {
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-secondary/35 p-4">
-              <p className="text-muted-foreground">Usuario autenticado</p>
+              <p className="text-muted-foreground">Usuário autenticado</p>
               <p className="font-medium">{user?.full_name}</p>
               <p className="text-muted-foreground">{user?.email}</p>
             </div>
@@ -469,7 +469,7 @@ export function DashboardPage() {
               Pacientes com maior risco operacional
             </CardTitle>
             <CardDescription>
-              Priorize primeiro quem concentra mais itens em atencão, criticidade ou divergencias.
+              Priorize primeiro quem concentra mais itens em atenção, criticidade ou divergências.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -501,7 +501,7 @@ export function DashboardPage() {
                       <p className="font-medium">{riskPatient.critical_items}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Divergencias</p>
+                      <p className="text-xs text-muted-foreground">Divergências</p>
                       <p className="font-medium">{riskPatient.relevant_divergences}</p>
                     </div>
                   </div>
@@ -531,7 +531,7 @@ export function DashboardPage() {
               Caminho sugerido
             </CardTitle>
             <CardDescription>
-              Sequencia recomendada para organizar o uso do sistema.
+              Sequência recomendada para organizar o uso do sistema.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 lg:grid-cols-2">
@@ -541,7 +541,7 @@ export function DashboardPage() {
                 <p className="mt-1 font-medium">{step.label}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{step.description}</p>
                 <Button asChild className="mt-4" size="sm" variant="outline">
-                  <Link to={step.to}>Abrir modulo</Link>
+                  <Link to={step.to}>Abrir módulo</Link>
                 </Button>
               </div>
             ))}

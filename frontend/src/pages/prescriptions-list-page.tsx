@@ -224,7 +224,7 @@ export function PrescriptionsListPage() {
       {consumptionError && selectedPatientId ? (
         <FeedbackBanner
           message={consumptionError}
-          title="Não foi possível carregar a duracao estimada das prescrições"
+          title="Não foi possível carregar a duração estimada das prescrições"
           variant="warning"
         />
       ) : null}
@@ -254,7 +254,7 @@ export function PrescriptionsListPage() {
         <Card className="bg-white/92">
           <CardContent>
             <EmptyState
-              description="Escolha um paciente para iniciar a listagem, criacao ou edição de prescrições."
+              description="Escolha um paciente para iniciar a listagem, criação ou edição de prescrições."
               icon={ClipboardList}
               title="Selecione um paciente"
             />
@@ -312,7 +312,7 @@ export function PrescriptionsListPage() {
                       </p>
                     </div>
                       <div>
-                        <p className="text-muted-foreground">Horarios específicos</p>
+                        <p className="text-muted-foreground">Horários específicos</p>
                         <p className="font-medium text-foreground">
                           {prescription.specific_times?.join(", ") || "Não informados"}
                         </p>
@@ -330,13 +330,13 @@ export function PrescriptionsListPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Duracao estimada</p>
+                        <p className="text-muted-foreground">Duração estimada</p>
                         <p className="font-medium text-foreground">
                         {formatDaysRemaining(projection?.days_remaining ?? null)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Consumo diario previsto</p>
+                      <p className="text-muted-foreground">Consumo diário previsto</p>
                         <p className="font-medium text-foreground">
                           {formatProjectionMetric(
                             projection?.daily_consumption ?? null,

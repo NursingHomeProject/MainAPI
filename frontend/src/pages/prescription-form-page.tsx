@@ -213,8 +213,8 @@ export function PrescriptionFormPage() {
           patients={patients}
           patientsError={dependenciesError}
           patientsLoading={isLoading}
-          submitLabel={isEditMode ? "Salvar alteracoes" : "Criar prescrição"}
-          title={isEditMode ? "Formulario de edição" : "Formulario de criacao"}
+          submitLabel={isEditMode ? "Salvar alterações" : "Criar prescrição"}
+          title={isEditMode ? "Formulário de edição" : "Formulário de criação"}
         />
       )}
     </div>
