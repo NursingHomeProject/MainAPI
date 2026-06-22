@@ -141,6 +141,9 @@ export function PatientMovementHistory({
                 <span className="text-xs text-muted-foreground">
                   {formatOccurredAt(mov.occurred_at)}
                 </span>
+                {mov.created_by_user_name ? (
+                  <span className="text-xs text-muted-foreground">· {mov.created_by_user_name}</span>
+                ) : null}
               </div>
               {mov.notes ? (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{mov.notes}</p>

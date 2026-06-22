@@ -227,9 +227,13 @@ def list_inventory_movements(
     prescription_id: UUID | None = None,
     movement_type: InventoryMovementType | None = None,
 ) -> list[InventoryMovement]:
-    statement = select(InventoryMovement).order_by(
-        InventoryMovement.occurred_at.desc(),
-        InventoryMovement.created_at.desc(),
+    statement = (
+        select(InventoryMovement)
+        .options(selectinload(InventoryMovement.created_by))
+        .order_by(
+            InventoryMovement.occurred_at.desc(),
+            InventoryMovement.created_at.desc(),
+        )
     )
 
     if item_id is not None:

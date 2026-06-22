@@ -38,6 +38,7 @@ from app.modules.inventory.services import (
 )
 from app.modules.items.models import Item
 from app.modules.measurement_units.models import Unit
+from app.modules.auth.models import User
 from app.modules.patients.models import Patient
 from app.modules.prescriptions.models import Prescription
 
@@ -257,9 +258,12 @@ def get_dashboard_overview(db: Session) -> DashboardOverviewResponse:
             InventoryMovement.quantity,
             InventoryMovement.patient_id,
             InventoryMovement.occurred_at,
+            InventoryMovement.created_by_user_id,
+            User.full_name.label("created_by_user_name"),
         )
         .join(Item, Item.id == InventoryMovement.item_id)
         .join(Unit, Unit.id == InventoryMovement.unit_id)
+        .outerjoin(User, User.id == InventoryMovement.created_by_user_id)
         .order_by(InventoryMovement.occurred_at.desc(), InventoryMovement.created_at.desc())
         .limit(10)
     ).all()
@@ -279,6 +283,8 @@ def get_dashboard_overview(db: Session) -> DashboardOverviewResponse:
             ),
             patient_id=row.patient_id,
             occurred_at=row.occurred_at,
+            created_by_user_id=row.created_by_user_id,
+            created_by_user_name=row.created_by_user_name,
         )
         for row in recent_movement_rows
     ]
@@ -350,9 +356,12 @@ def get_patient_details(db: Session, patient_id: UUID) -> PatientDetailsResponse
             InventoryMovement.movement_type,
             InventoryMovement.quantity,
             InventoryMovement.occurred_at,
+            InventoryMovement.created_by_user_id,
+            User.full_name.label("created_by_user_name"),
         )
         .join(Item, Item.id == InventoryMovement.item_id)
         .join(Unit, Unit.id == InventoryMovement.unit_id)
+        .outerjoin(User, User.id == InventoryMovement.created_by_user_id)
         .where(InventoryMovement.patient_id == patient_id)
         .order_by(InventoryMovement.occurred_at.desc(), InventoryMovement.created_at.desc())
         .limit(10)
@@ -388,6 +397,8 @@ def get_patient_details(db: Session, patient_id: UUID) -> PatientDetailsResponse
                 movement_type=row.movement_type,
                 quantity=row.quantity,
                 occurred_at=row.occurred_at,
+                created_by_user_id=row.created_by_user_id,
+                created_by_user_name=row.created_by_user_name,
             )
             for row in movement_rows
         ],

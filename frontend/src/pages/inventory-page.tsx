@@ -464,6 +464,10 @@ export function InventoryPage() {
                           <p className="text-muted-foreground">Paciente</p>
                           <p className="font-medium">{patient?.full_name ?? "Não informado"}</p>
                         </div>
+                        <div>
+                          <p className="text-muted-foreground">Registrado por</p>
+                          <p className="font-medium">{movement.created_by_user_name ?? "Não informado"}</p>
+                        </div>
                       </div>
 
                       <div>

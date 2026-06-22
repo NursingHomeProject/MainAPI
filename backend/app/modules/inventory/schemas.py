@@ -63,6 +63,7 @@ class InventoryMovementResponse(BaseModel):
     patient_id: UUID | None
     prescription_id: UUID | None
     created_by_user_id: UUID | None
+    created_by_user_name: str | None
     movement_type: InventoryMovementType
     adjustment_operation: InventoryAdjustmentOperation | None
     quantity: Decimal

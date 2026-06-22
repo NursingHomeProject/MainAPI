@@ -35,7 +35,16 @@ stock_router = APIRouter(dependencies=[Depends(get_current_active_user)])
 patient_stock_router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
-def build_inventory_movement_response(movement: InventoryMovement) -> InventoryMovementResponse:
+def build_inventory_movement_response(
+    movement: InventoryMovement,
+    *,
+    created_by_user_name: str | None = None,
+) -> InventoryMovementResponse:
+    resolved_name = (
+        created_by_user_name
+        if created_by_user_name is not None
+        else (movement.created_by.full_name if movement.created_by else None)
+    )
     return InventoryMovementResponse(
         id=movement.id,
         item_id=movement.item_id,
@@ -43,6 +52,7 @@ def build_inventory_movement_response(movement: InventoryMovement) -> InventoryM
         patient_id=movement.patient_id,
         prescription_id=movement.prescription_id,
         created_by_user_id=movement.created_by_user_id,
+        created_by_user_name=resolved_name,
         movement_type=movement.movement_type,
         adjustment_operation=movement.adjustment_operation,
         quantity=movement.quantity,
@@ -71,7 +81,9 @@ def create_inventory_movement_route(
         payload,
         created_by_user_id=current_user.id,
     )
-    return InventoryMovementDetailEnvelope(data=build_inventory_movement_response(movement))
+    return InventoryMovementDetailEnvelope(
+        data=build_inventory_movement_response(movement, created_by_user_name=current_user.full_name)
+    )
 
 
 @router.get("/movements", response_model=InventoryMovementListEnvelope, summary="List inventory movements")
@@ -158,4 +170,6 @@ def create_patient_stock_entry(
     movement = create_inventory_movement(
         db, create_payload, created_by_user_id=current_user.id
     )
-    return InventoryMovementDetailEnvelope(data=build_inventory_movement_response(movement))
+    return InventoryMovementDetailEnvelope(
+        data=build_inventory_movement_response(movement, created_by_user_name=current_user.full_name)
+    )

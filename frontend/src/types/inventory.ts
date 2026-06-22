@@ -11,6 +11,7 @@ export type InventoryMovement = {
   patient_id: string | null
   prescription_id: string | null
   created_by_user_id: string | null
+  created_by_user_name: string | null
   movement_type: InventoryMovementType
   adjustment_operation: InventoryAdjustmentOperation | null
   quantity: string

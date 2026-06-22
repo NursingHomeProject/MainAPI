@@ -57,6 +57,8 @@ export type PatientDetailsMovement = {
   movement_type: string
   quantity: string
   occurred_at: string
+  created_by_user_id: string | null
+  created_by_user_name: string | null
 }
 
 export type PatientDetails = {

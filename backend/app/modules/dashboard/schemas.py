@@ -74,6 +74,8 @@ class DashboardRecentMovementItem(BaseModel):
     stock_effect: Decimal
     patient_id: UUID | None
     occurred_at: datetime
+    created_by_user_id: UUID | None
+    created_by_user_name: str | None
 
 
 class DashboardOverviewResponse(BaseModel):
@@ -110,6 +112,8 @@ class PatientDetailsMovementItem(BaseModel):
     movement_type: InventoryMovementType
     quantity: Decimal
     occurred_at: datetime
+    created_by_user_id: UUID | None
+    created_by_user_name: str | None
 
 
 class PatientDetailsResponse(BaseModel):

@@ -1270,6 +1270,11 @@ export function PatientDetailPage() {
                       <p className="text-muted-foreground">
                         Quantidade: {formatDecimalAsInteger(movement.quantity)} {movement.unit_symbol}
                       </p>
+                      {movement.created_by_user_name ? (
+                        <p className="mt-1 text-muted-foreground">
+                          Registrado por: {movement.created_by_user_name}
+                        </p>
+                      ) : null}
                       <p className="mt-3 text-xs text-muted-foreground">{formatDateTime(movement.occurred_at)}</p>
                     </div>
                   ))
