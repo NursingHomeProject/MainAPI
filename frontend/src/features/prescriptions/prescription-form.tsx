@@ -90,6 +90,11 @@ export function PrescriptionForm({
   const availablePatients = patients.filter((patient) => patient.is_active || patient.id === values.patient_id)
   const availableItems = items.filter((item) => item.is_active || item.id === values.item_id)
 
+  // O backend exige specific_times quando uso=fixo + comparação=horários prescritos
+  const timesRequired =
+    shouldShowSpecificTimes(values.usage_mode) &&
+    values.comparison_window === "scheduled_times"
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -100,11 +105,11 @@ export function PrescriptionForm({
       frequency_per_day: values.frequency_per_day,
       specific_times: shouldShowSpecificTimes(values.usage_mode)
         ? (() => {
-            // Envia apenas os horários preenchidos, na quantidade da frequência
-            const filled = specificTimesList
-              .slice(0, values.frequency_per_day)
-              .filter(Boolean)
-            return filled.length > 0 ? filled : null
+            const slots = specificTimesList.slice(0, values.frequency_per_day)
+            const filled = slots.filter(Boolean)
+            // O backend exige que a quantidade de horários seja EXATAMENTE igual à
+            // frequência — enviar parcial causaria 422. Só envia se todos estiverem preenchidos.
+            return filled.length === values.frequency_per_day ? filled : null
           })()
         : null,
       usage_mode: values.usage_mode,
@@ -335,9 +340,16 @@ export function PrescriptionForm({
             {shouldShowSpecificTimes(values.usage_mode) ? (
               <div className="space-y-3">
                 <div>
-                  <Label>Horários específicos</Label>
+                  <Label>
+                    Horários específicos
+                    {timesRequired ? (
+                      <span className="ml-1 text-red-500">*</span>
+                    ) : null}
+                  </Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Um campo por dose diária. Deixe em branco para usar apenas a frequência como base.
+                    {timesRequired
+                      ? "Obrigatório para a lógica "Horários prescritos". Preencha todos os campos."
+                      : "Opcional. Deixe em branco para usar apenas a frequência como base de comparação."}
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -353,6 +365,7 @@ export function PrescriptionForm({
                           next[index] = e.target.value
                           setSpecificTimesList(next)
                         }}
+                        required={timesRequired}
                         type="time"
                         value={specificTimesList[index] ?? ""}
                       />
