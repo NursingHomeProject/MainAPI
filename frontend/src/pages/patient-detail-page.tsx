@@ -92,6 +92,14 @@ function formatTime(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(new Date(value))
 }
 
+const MOVEMENT_TYPE_LABEL: Record<string, string> = {
+  entry: "Entrada",
+  administration: "Administração",
+  loss: "Perda",
+  discard: "Descarte",
+  adjustment: "Ajuste",
+}
+
 function getItemTypeLabel(itemType: PatientActiveItem["item_type"]) {
   return itemType === "medication" ? "Medicamento" : "Insumo"
 }
@@ -1265,7 +1273,7 @@ export function PatientDetailPage() {
                     <div className="rounded-2xl border border-border/70 bg-secondary/35 p-4" key={movement.id}>
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <p className="font-medium">{movement.item_name}</p>
-                        <Badge variant="outline">{movement.movement_type}</Badge>
+                        <Badge variant="outline">{MOVEMENT_TYPE_LABEL[movement.movement_type] ?? movement.movement_type}</Badge>
                       </div>
                       <p className="text-muted-foreground">
                         Quantidade: {formatDecimalAsInteger(movement.quantity)} {movement.unit_symbol}
